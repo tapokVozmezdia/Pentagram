@@ -1,0 +1,5 @@
+IN build-dir WRITE IN TERMINAL THESE 2 LINES:  
+  
+cmake .. -G "MinGW Makefiles"  
+  
+cmake --build ..\build-dir\  
