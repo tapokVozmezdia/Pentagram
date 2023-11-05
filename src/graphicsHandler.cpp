@@ -62,10 +62,10 @@ llint GraphicsHandler::spawnTexture(const std::string& txtr, int p_x, int p_y)
     return this->objectList.back()->objectId;
 }
 
-void GraphicsHandler::animateTexture(const llint t_id, Animation* anim)
+void GraphicsHandler::animateTexture(const llint t_id, Animation& anim)
 {
     // std::cout << "!!HERE:" << &(anim) << std::endl;
-    this->objectMap[t_id]->animation = anim;
+    this->objectMap[t_id]->animation = std::make_shared<Animation>(anim);
     this->objectMap[t_id]->texture = *(this->objectMap[t_id]->animation->textures.begin());
     this->objectMap[t_id]->textureName = *(this->objectMap[t_id]->animation->textureNames.begin());
 }

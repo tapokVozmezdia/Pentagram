@@ -13,6 +13,8 @@
 #include <list>
 #include <vector>
 #include <unordered_map>
+#include <memory>
+#include <cmath>
 
 #ifndef WIDTH
     #define WIDTH 1152
@@ -78,9 +80,30 @@ struct GameObject
     std::string textureName; // Relative name of the texture in the project
     Vector2 coordinates; // Top-left point 
     llint objectId; // Unique id  
-    Animation* animation = nullptr;
+    std::shared_ptr<Animation> animation = nullptr;
     bool collision; // Is the object collided
-    ~GameObject();
 };
+
+// Basic structure of Abelian group, just thought it would be a fun solution :)
+class AbelianGroup
+{
+    public:
+        AbelianGroup(const std::vector<uint>& table);
+        uint product(const uint a, const uint b) const;
+        const uint cardinality() const;
+    private:
+        uint _сardinality;
+        std::vector<uint> CayleyTable;
+};
+/* 
+P.S. This class in general case actually represents a commutative groupoid,
+since not all conditions for it being a group are checked in the constructor
+(existence of the neutral element and associativity)
+However, I don't see the need to define a fully-complete Abelian Group
+because the code will descend into a complete bedlam,
+so it's recommended to create and employ instances of this class 
+with caution (or don't at all)
+*/
+
 
 #endif // MC

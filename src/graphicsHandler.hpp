@@ -19,7 +19,7 @@ class GraphicsHandler
         llint spawnTexture(const std::string& txtr, Vector2& pos);
         llint spawnTexture(const std::string& txtr, int p_x, int p_y);
 
-        void animateTexture(const llint t_id, Animation* anim);
+        void animateTexture(const llint t_id, Animation& anim);
 
         const llint getLastId() const; // Returns id of trhe last spawnde texture
 

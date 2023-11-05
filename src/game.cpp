@@ -62,7 +62,7 @@ void Game::actOne()
     this->graphics.centerCamera(mc_id);
 
     
-    Animation* anim = new Animation();
+    Animation anim;
 
     std::list<Texture2D*> txt;
     txt.push_back(this->graphics.getTexture("robot.png"));
@@ -74,9 +74,9 @@ void Game::actOne()
     tQ.push_back(1.2);
     tQ.push_back(1.2);
 
-    anim->textureNames = nTxt;
-    anim->textures = txt;
-    anim->timeQueues = tQ;
+    anim.textureNames = nTxt;
+    anim.textures = txt;
+    anim.timeQueues = tQ;
 
     this->graphics.animateTexture(mc_id, anim);
 
