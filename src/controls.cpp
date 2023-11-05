@@ -67,3 +67,11 @@ void Controls::moveWASD(const llint t_id, GraphicsHandler* graphics)
         graphics->moveTextureDelta(t_id, 1 * CHARACTER_SPEED * mult, 0);
     }
 }
+
+void Controls::attackLMC(const llint t_id, GraphicsHandler* graphics)
+{
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        graphics->triggerAttack(t_id);
+    }
+}

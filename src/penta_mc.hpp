@@ -1,4 +1,4 @@
-// Some defines that are used throughout the project 
+// Some definitions that are used throughout the project 
 
 #pragma once
 
@@ -82,7 +82,21 @@ struct GameObject
     llint objectId; // Unique id  
     std::shared_ptr<Animation> animation = nullptr;
     bool collision; // Is the object collided
+    bool nL = false; // Crutch for inheritance 
 };
+
+// Basic Entity type
+struct Entity : GameObject
+{   
+    uint baseDamage;
+    uint baseHP;
+    std::shared_ptr<Animation> attackAnimation = nullptr;
+    std::shared_ptr<Animation> getHitAnimation = nullptr;
+    bool isAttacking = false;
+    uint curSt = 0;
+};
+
+
 
 // Basic structure of Abelian group, just thought it would be a fun solution :)
 class AbelianGroup

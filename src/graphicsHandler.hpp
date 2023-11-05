@@ -16,10 +16,22 @@ class GraphicsHandler
 
         Texture2D* getTexture(const std::string& tName); // Returns texture from texture map by name
 
-        llint spawnTexture(const std::string& txtr, Vector2& pos);
+
+        //Spawns basic GameObject type object
+        llint spawnTexture(const std::string& txtr, Vector2& pos); 
         llint spawnTexture(const std::string& txtr, int p_x, int p_y);
 
+
+        //Spawns Entity type object
+        llint spawnEntity(const std::string& txtr, Vector2& pos, double dmg, double hp); 
+        llint spawnEntity(const std::string& txtr, int p_x, int p_y, double dmg, double hp);
+
+
         void animateTexture(const llint t_id, Animation& anim);
+        void animateEntity(const llint t_id, Animation& attack, Animation& hit);
+
+        void triggerAttack(const llint t_id);
+
 
         const llint getLastId() const; // Returns id of trhe last spawnde texture
 

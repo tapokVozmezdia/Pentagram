@@ -11,6 +11,10 @@ GraphicsHandler::GraphicsHandler()
 
 GraphicsHandler::~GraphicsHandler()
 {
+    for(auto obj : this->objectList)
+    {
+        delete obj;
+    }
     this->objectList.clear();
     this->textureMap.clear();
 }
@@ -62,6 +66,45 @@ llint GraphicsHandler::spawnTexture(const std::string& txtr, int p_x, int p_y)
     return this->objectList.back()->objectId;
 }
 
+
+
+llint GraphicsHandler::spawnEntity(const std::string& txtr, Vector2& pos, double dmg, double hp)
+{
+    Entity* ent = new Entity();
+    ent->texture = &(this->textureMap[txtr]);
+    ent->textureName = txtr;
+    ent->coordinates = pos;
+    ent->objectId = IdCounter::getFreeId();
+    ent->collision = false;
+    ent->baseDamage = dmg;
+    ent->baseHP = hp;
+    ent->nL = true;
+
+    this->objectList.push_back(ent);
+    this->objectMap[this->objectList.back()->objectId] = (this->objectList.back());
+    return this->objectList.back()->objectId;
+}
+
+llint GraphicsHandler::spawnEntity(const std::string& txtr, int p_x, int p_y, double dmg, double hp)
+{
+    Entity* ent = new Entity();
+    ent->texture = &(this->textureMap[txtr]);
+    ent->textureName = txtr;
+    ent->coordinates.x = p_x;
+    ent->coordinates.y = p_y;
+    ent->objectId = IdCounter::getFreeId();
+    ent->collision = false;
+    ent->baseDamage = dmg;
+    ent->baseHP = hp;
+    ent->nL = true;
+
+    this->objectList.push_back(ent);
+    this->objectMap[this->objectList.back()->objectId] = (this->objectList.back());
+    return this->objectList.back()->objectId;
+}
+
+
+
 void GraphicsHandler::animateTexture(const llint t_id, Animation& anim)
 {
     // std::cout << "!!HERE:" << &(anim) << std::endl;
@@ -69,6 +112,28 @@ void GraphicsHandler::animateTexture(const llint t_id, Animation& anim)
     this->objectMap[t_id]->texture = *(this->objectMap[t_id]->animation->textures.begin());
     this->objectMap[t_id]->textureName = *(this->objectMap[t_id]->animation->textureNames.begin());
 }
+
+void GraphicsHandler::animateEntity(const llint t_id, Animation& attack, Animation& hit)
+{
+    ((Entity*)(this->objectMap[t_id]))->attackAnimation = std::make_shared<Animation>(attack);
+}
+
+
+
+
+void GraphicsHandler::triggerAttack(const llint t_id)
+{
+    if (((Entity*)this->objectMap[t_id])->attackAnimation != nullptr && 
+        ((Entity*)this->objectMap[t_id])->curSt == 0 && 
+        ((Entity*)this->objectMap[t_id])->isAttacking == false)
+    {
+        ((Entity*)this->objectMap[t_id])->isAttacking = true;
+        // std::cout << "ROBOT dealt " << ((Entity*)this->objectMap[t_id])->baseDamage
+        //     << " DAMAGE" << std::endl;
+    }
+}
+
+
 
 
 const llint GraphicsHandler::getLastId() const
@@ -149,11 +214,13 @@ void GraphicsHandler::collisionCheck()
                 this->objectMap[(**j).objectId]->collision = true;
 
 
+                
 
-                this->objectMap[(**i).objectId]->texture = 
-                    &(this->textureMap["collision.png"]);
-                this->objectMap[(**j).objectId]->texture =
-                    &(this->textureMap["collision.png"]);;
+
+                // this->objectMap[(**i).objectId]->texture = 
+                //     &(this->textureMap["collision.png"]);
+                // this->objectMap[(**j).objectId]->texture =
+                //     &(this->textureMap["collision.png"]);;
 
                 //std::cout << "Collision!!!" << std::endl;
 
@@ -177,9 +244,37 @@ void GraphicsHandler::animationCheck()
     for (auto i = this->objectList.begin(); 
         i != this->objectList.end(); ++i)
     {
-        
+        if ((*i)->nL == false) // If not Entity
+        {
+            if ((*i)->animation == nullptr)
+                continue;
+            if ((*i)->animation->curTime >= FPS * ((*i)->animation->timeQueues[0]))
+            {
+                ContainerHandler::shiftListL(&((*i)->animation->textures));
+                ContainerHandler::shiftListL(&((*i)->animation->textureNames));
+                ContainerHandler::shiftVectorL(&((*i)->animation->timeQueues));
+                (*i)->texture = *((*i)->animation->textures.begin());
+                (*i)->textureName = *((*i)->animation->textureNames.begin());
+                (*i)->animation->curTime = 0;
+                continue;
+            }
+            ((*i)->animation->curTime)++;
+        }
+
+        //For entity
+        if (((Entity*)(*i))->isAttacking == true)
+        {
+            std::swap(((Entity*)(*i))->animation, ((Entity*)(*i))->attackAnimation);
+            ((Entity*)(*i))->curSt = ((Entity*)(*i))->curSt + 1;
+            ((Entity*)(*i))->isAttacking = false;
+        }
+        if (((Entity*)(*i))->curSt > ((Entity*)(*i))->animation->textures.size())
+        {
+            ((Entity*)(*i))->curSt = 0;
+            std::swap(((Entity*)(*i))->animation, ((Entity*)(*i))->attackAnimation);
+        }
         if ((*i)->animation == nullptr)
-            continue;
+                continue;
         if ((*i)->animation->curTime >= FPS * ((*i)->animation->timeQueues[0]))
         {
             ContainerHandler::shiftListL(&((*i)->animation->textures));
@@ -188,6 +283,10 @@ void GraphicsHandler::animationCheck()
             (*i)->texture = *((*i)->animation->textures.begin());
             (*i)->textureName = *((*i)->animation->textureNames.begin());
             (*i)->animation->curTime = 0;
+            if (((Entity*)(*i))->curSt != 0)
+            {
+                ((Entity*)(*i))->curSt += 1;
+            }
             continue;
         }
         ((*i)->animation->curTime)++;
@@ -209,8 +308,9 @@ void GraphicsHandler::run()
             this->activeCamera.target = *(this->cameraTarget);
         }
 
-        this->animationCheck();
+
         this->collisionCheck();
+        this->animationCheck();
 
         BeginMode2D(this->activeCamera);
 
