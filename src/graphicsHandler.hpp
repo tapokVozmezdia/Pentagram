@@ -27,13 +27,17 @@ class GraphicsHandler
         llint spawnEntity(const std::string& txtr, int p_x, int p_y, double dmg, double hp);
 
 
+        //Deletes GameObject or inherited object by id  
+        void deleteTexture(const llint object_id);
+
+
         void animateTexture(const llint t_id, Animation& anim);
         void animateEntity(const llint t_id, Animation& attack, Animation& hit);
 
         void triggerAttack(const llint t_id);
 
 
-        const llint getLastId() const; // Returns id of trhe last spawnde texture
+        const llint getLastId() const; // Returns id of the last spawnde texture
 
 
         void moveTextureAbs(const llint t_id, int dx, int dy);
@@ -59,9 +63,12 @@ class GraphicsHandler
 
         void animationCheck();
 
+        void fightCheck();
+
         Camera2D activeCamera {0};
         Vector2 * cameraTarget = nullptr;
-
+        llint targetId;
+        
         std::list<GameObject*> objectList;
         
         std::unordered_map<llint, GameObject*> objectMap;

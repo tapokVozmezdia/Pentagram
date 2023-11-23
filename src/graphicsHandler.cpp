@@ -78,6 +78,7 @@ llint GraphicsHandler::spawnEntity(const std::string& txtr, Vector2& pos, double
     ent->collision = false;
     ent->baseDamage = dmg;
     ent->baseHP = hp;
+    ent->curHP = hp;
     ent->nL = true;
 
     this->objectList.push_back(ent);
@@ -96,11 +97,27 @@ llint GraphicsHandler::spawnEntity(const std::string& txtr, int p_x, int p_y, do
     ent->collision = false;
     ent->baseDamage = dmg;
     ent->baseHP = hp;
+    ent->curHP = hp;
     ent->nL = true;
 
     this->objectList.push_back(ent);
     this->objectMap[this->objectList.back()->objectId] = (this->objectList.back());
     return this->objectList.back()->objectId;
+}
+
+
+
+void GraphicsHandler::deleteTexture(const llint object_id)
+{
+    for(auto it = this->objectList.begin(); it != this->objectList.end(); it++)
+    {
+        if ((*it)->objectId == object_id)
+        {
+            delete this->objectMap[object_id];
+            this->objectMap.erase(object_id);
+            this->objectList.erase(it);
+        }
+    }
 }
 
 
@@ -174,6 +191,7 @@ void GraphicsHandler::moveTextureAbs(const llint t_id, Vector2& ds)
 void GraphicsHandler::centerCamera(llint t_id)
 {
     this->cameraTarget = &(this->objectMap[t_id]->coordinates);
+    this->targetId = t_id;
     // std::cout << "HERE " << std::endl;
     // std::cout << this->objectMap[t_id]->coordinates.x << " " <<
     //     this->objectMap[t_id]->coordinates.y << std::endl;
@@ -213,9 +231,35 @@ void GraphicsHandler::collisionCheck()
                 this->objectMap[(**i).objectId]->collision = true;
                 this->objectMap[(**j).objectId]->collision = true;
 
+                if (this->objectMap[(**j).objectId]->nL == true 
+                    && this->objectMap[(**i).objectId]->nL == true)
+                {
+                    if (((Entity*)(*i))->isAttacking == true)
+                    {
+                        ((Entity*)(*j))->curHP -= ((Entity*)(*i))->baseDamage;
+                        std::cout << "OBJECT " << ((Entity*)(*j))->objectId <<
+                            " IS AT " << ((Entity*)(*j))->curHP << 
+                            " HEALTH POINTS" << std::endl;
+                    }
+                    if (((Entity*)(*j))->isAttacking == true)
+                    {
+                        ((Entity*)(*i))->curHP -= ((Entity*)(*j))->baseDamage;
+                        std::cout << "OBJECT " << ((Entity*)(*i))->objectId <<
+                            " IS AT " << ((Entity*)(*i))->curHP << 
+                            " HEALTH POINTS" << std::endl;
+                    }
+                }
 
-                
-
+                // if (true
+                // && this->objectMap[(**j).objectId]->objectId != this->targetId)
+                // {
+                //     this->deleteTexture(this->objectMap[(**j).objectId]->objectId);
+                // }
+                // if (true
+                // && this->objectMap[(**i).objectId]->objectId != this->targetId)
+                // {
+                //     this->deleteTexture(this->objectMap[(**i).objectId]->objectId);
+                // }
 
                 // this->objectMap[(**i).objectId]->texture = 
                 //     &(this->textureMap["collision.png"]);
@@ -237,8 +281,6 @@ void GraphicsHandler::resetCollisions()
     }
 }
 
-
-
 void GraphicsHandler::animationCheck()
 {
     for (auto i = this->objectList.begin(); 
@@ -259,23 +301,26 @@ void GraphicsHandler::animationCheck()
                 continue;
             }
             ((*i)->animation->curTime)++;
+            continue;
         }
 
         //For entity
-        if (((Entity*)(*i))->isAttacking == true)
+        if ((*i)->animation == nullptr)
+                continue;
+        if (((Entity*)(*i))->isAttacking == true &&
+            ((Entity*)(*i))->attackAnimation != nullptr)
         {
             std::swap(((Entity*)(*i))->animation, ((Entity*)(*i))->attackAnimation);
             ((Entity*)(*i))->curSt = ((Entity*)(*i))->curSt + 1;
             ((Entity*)(*i))->isAttacking = false;
         }
-        if (((Entity*)(*i))->curSt > ((Entity*)(*i))->animation->textures.size())
+        if (((Entity*)(*i))->curSt > ((Entity*)(*i))->animation->textures.size()
+             && ((Entity*)(*i))->attackAnimation != nullptr)
         {
             ((Entity*)(*i))->curSt = 0;
             std::swap(((Entity*)(*i))->animation, ((Entity*)(*i))->attackAnimation);
         }
-        if ((*i)->animation == nullptr)
-                continue;
-        if ((*i)->animation->curTime >= FPS * ((*i)->animation->timeQueues[0]))
+        if ((*i)->animation->curTime >= (FPS * ((*i)->animation->timeQueues[0])))
         {
             ContainerHandler::shiftListL(&((*i)->animation->textures));
             ContainerHandler::shiftListL(&((*i)->animation->textureNames));
@@ -290,6 +335,29 @@ void GraphicsHandler::animationCheck()
             continue;
         }
         ((*i)->animation->curTime)++;
+    }
+}
+
+
+
+void GraphicsHandler::fightCheck()
+{
+    std::list<llint> to_delete_list;
+
+    for (auto it : objectList)
+    {
+        if (it->nL == true)
+        {
+            if (((Entity*)(it))->curHP <= 0)
+            {
+                to_delete_list.push_back(it->objectId);
+            }
+        }
+    }
+
+    for (auto i : to_delete_list)
+    {
+        this->deleteTexture(i);
     }
 }
 
@@ -311,6 +379,7 @@ void GraphicsHandler::run()
 
         this->collisionCheck();
         this->animationCheck();
+        this->fightCheck();
 
         BeginMode2D(this->activeCamera);
 

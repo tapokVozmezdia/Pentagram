@@ -29,7 +29,7 @@
 #endif
 
 #ifndef CHARACTER_SPEED
-    #define CHARACTER_SPEED 4.5f
+    #define CHARACTER_SPEED 9.f
 #endif
 
 typedef unsigned int uint;
@@ -90,6 +90,7 @@ struct Entity : GameObject
 {   
     uint baseDamage;
     uint baseHP;
+    int curHP;
     std::shared_ptr<Animation> attackAnimation = nullptr;
     std::shared_ptr<Animation> getHitAnimation = nullptr;
     bool isAttacking = false;

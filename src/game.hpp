@@ -20,5 +20,5 @@ class Game
         uint screenWidth, screnHeight;
 
         void actOne();
-        
+        void makeEnemy(const int x, const int y);
 };
