@@ -16,7 +16,6 @@ class GraphicsHandler
 
         Texture2D* getTexture(const std::string& tName); // Returns texture from texture map by name
 
-
         //Spawns basic GameObject type object
         llint spawnTexture(const std::string& txtr, Vector2& pos); 
         llint spawnTexture(const std::string& txtr, int p_x, int p_y);
@@ -25,6 +24,9 @@ class GraphicsHandler
         //Spawns Entity type object
         llint spawnEntity(const std::string& txtr, Vector2& pos, double dmg, double hp); 
         llint spawnEntity(const std::string& txtr, int p_x, int p_y, double dmg, double hp);
+
+        //Transforms an entity into a trap
+        void trapFromEntity(const llint object_id);
 
 
         //Deletes GameObject or inherited object by id  

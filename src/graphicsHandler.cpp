@@ -33,9 +33,6 @@ Texture2D* GraphicsHandler::getTexture(const std::string& tName)
     return &(this->textureMap[tName]);
 }
 
-
-
-
 llint GraphicsHandler::spawnTexture(const std::string& txtr, Vector2& pos)
 {
     GameObject* obj = new GameObject();
@@ -105,6 +102,16 @@ llint GraphicsHandler::spawnEntity(const std::string& txtr, int p_x, int p_y, do
     return this->objectList.back()->objectId;
 }
 
+
+
+void GraphicsHandler::trapFromEntity(const llint object_id)
+{
+    if (this->objectMap[object_id]->nL == false)
+    {
+        throw std::logic_error("Non-entity id was ginven into trapFromEntity func");
+    }
+    ((Entity*)(this->objectMap[object_id]))->isTrap = true;
+}
 
 
 void GraphicsHandler::deleteTexture(const llint object_id)
@@ -234,14 +241,28 @@ void GraphicsHandler::collisionCheck()
                 if (this->objectMap[(**j).objectId]->nL == true 
                     && this->objectMap[(**i).objectId]->nL == true)
                 {
-                    if (((Entity*)(*i))->isAttacking == true)
+                    if (((Entity*)(*i))->isTrap == true 
+                        && ((Entity*)(*j))->isTrap == false)
+                    {
+                        this->triggerAttack(((Entity*)(*i))->objectId);
+                    }
+                    if (((Entity*)(*j))->isTrap == true 
+                        && ((Entity*)(*i))->isTrap == false)
+                    {
+                        this->triggerAttack(((Entity*)(*j))->objectId);
+                    }
+
+
+                    if (((Entity*)(*i))->isAttacking == true 
+                        && ((Entity*)(*j))->isTrap == false)
                     {
                         ((Entity*)(*j))->curHP -= ((Entity*)(*i))->baseDamage;
                         std::cout << "OBJECT " << ((Entity*)(*j))->objectId <<
                             " IS AT " << ((Entity*)(*j))->curHP << 
                             " HEALTH POINTS" << std::endl;
                     }
-                    if (((Entity*)(*j))->isAttacking == true)
+                    if (((Entity*)(*j))->isAttacking == true
+                        && ((Entity*)(*i))->isTrap == false)
                     {
                         ((Entity*)(*i))->curHP -= ((Entity*)(*j))->baseDamage;
                         std::cout << "OBJECT " << ((Entity*)(*i))->objectId <<

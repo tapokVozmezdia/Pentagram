@@ -75,3 +75,25 @@ void Controls::attackLMC(const llint t_id, GraphicsHandler* graphics)
         graphics->triggerAttack(t_id);
     }
 }
+
+void Controls::vibrate(const llint t_id, GraphicsHandler* graphics, int intencity)
+{
+    int r = GetRandomValue(0, 3);
+    switch (r)
+    {
+        case 0:
+            graphics->moveTextureDelta(t_id, intencity, 0);
+            break;
+        case 1:
+            graphics->moveTextureDelta(t_id, intencity * -1, 0);
+            break;
+        case 2:
+            graphics->moveTextureDelta(t_id, 0, intencity);
+            break;
+        case 3:
+            graphics->moveTextureDelta(t_id, 0, intencity * -1);
+            break;
+        default:
+            break;
+    }
+}

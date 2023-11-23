@@ -82,6 +82,7 @@ struct GameObject
     llint objectId; // Unique id  
     std::shared_ptr<Animation> animation = nullptr;
     bool collision; // Is the object collided
+    bool isWall = false;
     bool nL = false; // Crutch for inheritance 
 };
 
@@ -95,6 +96,7 @@ struct Entity : GameObject
     std::shared_ptr<Animation> getHitAnimation = nullptr;
     bool isAttacking = false;
     uint curSt = 0;
+    bool isTrap = false;
 };
 
 
