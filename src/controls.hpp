@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphicsHandler.hpp"
+#include "menu.hpp"
 
 namespace Controls
 {

@@ -22,11 +22,17 @@ class GraphicsHandler
 
 
         //Spawns Entity type object
-        llint spawnEntity(const std::string& txtr, Vector2& pos, double dmg, double hp); 
-        llint spawnEntity(const std::string& txtr, int p_x, int p_y, double dmg, double hp);
+        llint spawnEntity(const std::string& txtr, Vector2& pos, double dmg, double hp, Team tm); 
+        llint spawnEntity(const std::string& txtr, int p_x, int p_y, double dmg, double hp, Team tm);
+
+
+
+        //Transforms a GameObject into a wall
+        void wallFromObject(const llint object_id);
 
         //Transforms an entity into a trap
         void trapFromEntity(const llint object_id);
+
 
 
         //Deletes GameObject or inherited object by id  
@@ -39,13 +45,19 @@ class GraphicsHandler
         void triggerAttack(const llint t_id);
 
 
+        //Makes enemies attack the player
+        void enemyHostilityTriggerOn(); 
+        //Stops enemies from attacking the player
+        void enemyHostilityTriggerOff(); 
+
+
         const llint getLastId() const; // Returns id of the last spawnde texture
 
 
         void moveTextureAbs(const llint t_id, int dx, int dy);
         void moveTextureAbs(const llint t_id, Vector2& ds);
 
-        void moveTextureDelta(const llint t_id, int dx, int dy);
+        void moveTextureDelta(const llint t_id, float dx, float dy);
         void moveTextureDelta(const llint t_id, Vector2& ds);
 
 
@@ -65,14 +77,22 @@ class GraphicsHandler
 
         void animationCheck();
 
-        void fightCheck();
+        void fightCheck(GameObject* i, GameObject* j);
+
+        //Makes all the enemies charge and attack the player in the visibility radius
+        void enemyHostile();
+
+        void afterFightCheck();
 
         Camera2D activeCamera {0};
-        Vector2 * cameraTarget = nullptr;
+        Vector2* cameraTarget = nullptr;
         llint targetId;
         
         std::list<GameObject*> objectList;
+        std::list<llint> wallIndexList;
         
         std::unordered_map<llint, GameObject*> objectMap;
         std::unordered_map<std::string, Texture2D> textureMap;
+
+        bool hostilityFlag = true;
 };

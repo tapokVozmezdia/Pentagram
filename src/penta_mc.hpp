@@ -2,8 +2,8 @@
 
 #pragma once
 
-#ifndef MC
-#define MC
+#ifndef MISC
+#define MISC
 
 #include "raylib.h" // to install raylib run the first command in build-instrutions.txt
 
@@ -30,6 +30,22 @@
 
 #ifndef CHARACTER_SPEED
     #define CHARACTER_SPEED 9.f
+#endif
+
+#ifndef ENEMY_SPEED
+    #define ENEMY_SPEED 6.f
+#endif
+
+#ifndef ENEMY_VISIBILITY
+    #define ENEMY_VISIBILITY 450
+#endif
+
+#ifndef NOISE_FREQUENCY
+    #define NOISE_FREQUENCY 2.5
+#endif
+
+#ifndef NOISE_LENGTH
+    #define NOISE_LENGTH 1.4
 #endif
 
 typedef unsigned int uint;
@@ -64,6 +80,16 @@ namespace ContainerHandler
     }
 }
 
+
+typedef enum
+{
+    MAIN = 0,
+    ALLY,
+    NEUTRAL,
+    HOSTILE
+} Team;
+
+
 struct Animation
 {
     std::list<Texture2D*>  textures;
@@ -96,9 +122,19 @@ struct Entity : GameObject
     std::shared_ptr<Animation> getHitAnimation = nullptr;
     bool isAttacking = false;
     uint curSt = 0;
+    Vector2 * target = nullptr;
+    Team team;
     bool isTrap = false;
+    uint noise = 0;
+    double noise_length = 0;
+    Vector2 momentum;
 };
 
+
+namespace ObjectHandler
+{
+    const Vector2 getCenter(GameObject* obj);
+}
 
 
 // Basic structure of Abelian group, just thought it would be a fun solution :)
@@ -123,4 +159,4 @@ with caution (or don't at all)
 */
 
 
-#endif // MC
+#endif // MISC

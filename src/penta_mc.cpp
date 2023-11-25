@@ -39,3 +39,11 @@ const uint AbelianGroup::cardinality() const
 {
     return this->_сardinality;
 }
+
+const Vector2 ObjectHandler::getCenter(GameObject* obj)
+{
+    return Vector2{
+        obj->coordinates.x + (obj->texture->width / 2),
+        obj->coordinates.y + (obj->texture->height / 2)
+    };
+}

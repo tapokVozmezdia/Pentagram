@@ -46,11 +46,9 @@ void animateMainCharacter(GraphicsHandler* graphics, llint mc_id)
 
 
 
-
-
 void Game::makeEnemy(const int x, const int y)
 {
-    llint enemy_id = (this->graphics.spawnEntity("dummy.png", x, y, 5, 100));
+    llint enemy_id = (this->graphics.spawnEntity("dummy.png", x, y, 5, 100, Team::HOSTILE));
     this->objectNameMap["enemy" + std::to_string(enemy_id)] = enemy_id;
 
     Animation anim;
@@ -76,7 +74,7 @@ void Game::makeEnemy(const int x, const int y)
 
 void Game::makeTrap(const int x, const int y)
 {
-    llint enemy_id = (this->graphics.spawnEntity("trap1.png", x, y, 50, 100));
+    llint enemy_id = (this->graphics.spawnEntity("trap1.png", x, y, 50, 100, Team::HOSTILE));
     this->objectNameMap["trap" + std::to_string(enemy_id)] = enemy_id;
     
     this->graphics.trapFromEntity(enemy_id);
@@ -97,13 +95,7 @@ void Game::makeTrap(const int x, const int y)
 
 
     tQ.push_back(2);
-    tQ.push_back(0.1);
-    tQ.push_back(0.1);
-    tQ.push_back(0.1);
-    tQ.push_back(0.1);
-    tQ.push_back(0.1);
-    tQ.push_back(0.1);
-    tQ.push_back(0.1);
+    for (int i = 0; i < 7; ++i) tQ.push_back(0.1);
 
     anim.textureNames = nTxt;
     anim.textures = txt;
@@ -132,6 +124,15 @@ void Game::makeTrap(const int x, const int y)
     this->graphics.animateEntity(enemy_id, at, at);
 
 }
+
+void Game::makeWall(const int x, const int y)
+{
+    llint wall_id = (this->graphics.spawnTexture("wall.png", x, y));
+    this->objectNameMap["trap" + std::to_string(wall_id)] = wall_id;
+
+    this->graphics.wallFromObject(wall_id);
+}
+
 
 
 
@@ -190,11 +191,11 @@ void Game::actOne()
     this->graphics.loadTextureFromImage("star.png");
     this->graphics.loadTextureFromImage("collision.png");
     this->graphics.loadTextureFromImage("attack.png");
-    this->starNum = GetRandomValue(5, 30);
+    this->starNum = GetRandomValue(5, 10);
     for (int i = 0; i < this->starNum; ++i)
     {
-        int x = GetRandomValue(-1000, 1000);
-        int y = GetRandomValue(-1000, 1000);
+        int x = GetRandomValue(0, 1000);
+        int y = GetRandomValue(0, 1000);
         llint tmp = (this->graphics.spawnTexture("star.png", x, y));
         this->objectNameMap["star" + std::to_string(i)] = tmp;
     }
@@ -208,20 +209,20 @@ void Game::actOne()
     for (int i = 0; i < 5; ++i)
     {
         this->makeEnemy(
-            GetRandomValue(-1000, 1000),
-            GetRandomValue(-1000, 1000)
+            GetRandomValue(0, 1000),
+            GetRandomValue(0, 1000)
         );
     }
 
     for (int i = 0; i < 5; ++i)
     {
         this->makeTrap(
-            GetRandomValue(-1000, 1000),
-            GetRandomValue(-1000, 1000)
+            GetRandomValue(0, 1000),
+            GetRandomValue(0, 1000)
         );
     }
 
-    llint mc_id = (this->graphics.spawnEntity("robot.png", 100, 100, 10, 1000));
+    llint mc_id = (this->graphics.spawnEntity("robot.png", 100, 100, 10, 1000, Team::MAIN));
     this->objectNameMap["MC"] = mc_id;
     // std::cout << "mc_id: " << std::endl;
     // std::cout << mc_id << std::endl;
@@ -235,5 +236,9 @@ void Game::actOne()
     this->graphics.loadTextureFromImage("trap_a1.png");
     this->graphics.loadTextureFromImage("trap_a2.png");
 
+    this->graphics.loadTextureFromImage("wall.png");
+
     animateMainCharacter(&(this->graphics), mc_id);
+
+    this->makeWall(-500, -500);
 }
