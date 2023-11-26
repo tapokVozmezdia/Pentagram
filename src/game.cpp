@@ -153,6 +153,62 @@ void Game::makeWall(const int x, const int y)
 }
 
 
+void Game::makeFloor(const int x, const int y)
+{
+    int rand = GetRandomValue(1, 4);
+    if (rand != 4)
+    {
+        llint floor_id = (this->graphics.spawnTexture(("floor" + std::to_string(rand) + ".png"), x, y));
+        this->objectNameMap["trap" + std::to_string(floor_id)] = floor_id;
+        return;
+    }
+
+    rand = GetRandomValue(1, 4);
+    llint floor_id = (this->graphics.spawnTexture(("floor41.png"), x, y));
+    this->objectNameMap["trap" + std::to_string(floor_id)] = floor_id;
+
+    Animation anim;
+
+    std::list<Texture2D*> txt;
+    std::list<std::string> nTxt;
+    std::vector<double> tQ;
+
+    // for (int i = 1; i <= 4; ++i)
+    // {
+    //     txt.push_back(this->graphics.getTexture("floor4" + std::to_string(i) + ".png"));
+    //     nTxt.push_back("floor4" + std::to_string(i) + ".png");
+    // }
+
+    txt.push_back(this->graphics.getTexture("floor41.png"));
+    nTxt.push_back("floor41.png");
+
+    for (int i = 0; i < 3; ++i)
+    {
+        txt.push_back(this->graphics.getTexture("floor42.png"));
+        nTxt.push_back("floor42.png");
+        txt.push_back(this->graphics.getTexture("floor41.png"));
+        nTxt.push_back("floor41.png");
+    }
+
+    txt.push_back(this->graphics.getTexture("floor43.png"));
+    nTxt.push_back("floor43.png");
+
+    txt.push_back(this->graphics.getTexture("floor44.png"));
+    nTxt.push_back("floor44.png");
+
+    tQ.push_back(1.8);
+    for (int i = 0; i < 6; ++i) 
+        tQ.push_back(0.1);
+    tQ.push_back(0.2);
+    tQ.push_back(1.4);
+
+    anim.textureNames = nTxt;
+    anim.textures = txt;
+    anim.timeQueues = tQ;
+
+    this->graphics.animateTexture(floor_id, anim);
+}
+
 
 
 
@@ -222,6 +278,25 @@ void Game::actOne()
     this->graphics.loadTextureFromImage("trap_a2.png");
 
     this->graphics.loadTextureFromImage("wall.png");
+
+    this->graphics.loadTextureFromImage("floor1.png");
+    this->graphics.loadTextureFromImage("floor2.png");
+    this->graphics.loadTextureFromImage("floor3.png");
+    this->graphics.loadTextureFromImage("floor41.png");
+    this->graphics.loadTextureFromImage("floor42.png");
+    this->graphics.loadTextureFromImage("floor43.png");
+    this->graphics.loadTextureFromImage("floor44.png");
+
+    int c1 = -1000, c2 = -1000;
+
+    for (int i = 0; i < 10; ++i)
+    {
+        for (int j = 0; j < 10; ++j)
+        {
+            this->makeFloor(c1 + (i * 200), c2 + (j * 200));
+        }
+    }
+
 
     this->starNum = GetRandomValue(5, 10);
     for (int i = 0; i < this->starNum; ++i)

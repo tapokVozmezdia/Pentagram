@@ -28,4 +28,5 @@ class Game
         void makeEnemy(const int x, const int y);
         void makeTrap(const int x, const int y);
         void makeWall(const int x, const int y);
+        void makeFloor(const int x, const int y);
 };
