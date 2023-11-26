@@ -391,16 +391,23 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
         }
 
 
-        if (((Entity*)(i))->isAttacking == true 
-            && ((Entity*)(j))->isTrap == false)
+        if ((((Entity*)(i))->isAttacking == true 
+            && ((Entity*)(j))->isTrap == false) && 
+            ((((Entity*)(j))->team != ((Entity*)(i))->team) ||
+            ((Entity*)(i))->isTrap == true)
+            )
+
         {
             ((Entity*)(j))->curHP -= ((Entity*)(i))->baseDamage;
             std::cout << "OBJECT " << ((Entity*)(j))->objectId <<
                 " IS AT " << ((Entity*)(j))->curHP << 
                 " HEALTH POINTS" << std::endl;
         }
-        if (((Entity*)(j))->isAttacking == true
-            && ((Entity*)(i))->isTrap == false)
+        if ((((Entity*)(j))->isAttacking == true
+            && ((Entity*)(i))->isTrap == false) && 
+            ((((Entity*)(j))->team != ((Entity*)(i))->team) 
+            || ((Entity*)(j))->isTrap == true)
+            )
         {
             ((Entity*)(i))->curHP -= ((Entity*)(j))->baseDamage;
             std::cout << "OBJECT " << ((Entity*)(i))->objectId <<
@@ -475,6 +482,10 @@ void GraphicsHandler::enemyHostile()
                     dx = dx / l * ENEMY_SPEED;
                     dy = dy / l * ENEMY_SPEED;
                     this->moveTextureDelta((*j)->objectId, dx, dy);
+                    if (ObjectHandler::collided(*i, *j) && makeNoise)
+                    {
+                        triggerAttack((*j)->objectId);
+                    }
                 }
             }
 
@@ -514,6 +525,10 @@ void GraphicsHandler::enemyHostile()
                     dx = dx / l * ENEMY_SPEED;
                     dy = dy / l * ENEMY_SPEED;
                     this->moveTextureDelta((*i)->objectId, dx, dy);
+                    if (ObjectHandler::collided(*i, *j) && makeNoise)
+                    {
+                        triggerAttack((*i)->objectId);
+                    }
                 }
             }
         }

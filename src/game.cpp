@@ -70,6 +70,25 @@ void Game::makeEnemy(const int x, const int y)
 
     this->graphics.animateTexture(enemy_id, anim);
 
+    Animation at;
+
+    std::list<Texture2D*> txt1;
+    std::list<std::string> nTxt1;
+    std::vector<double> tQ1;
+
+    txt1.push_back(this->graphics.getTexture("dummy_strike.png"));
+    txt1.push_back(this->graphics.getTexture("dummy_strike.png"));
+    nTxt1.push_back("dummy_strike.png");
+    nTxt1.push_back("dummy_strike.png");
+    tQ1.push_back(0.2);
+    tQ1.push_back(0.2);
+
+    at.textureNames = nTxt1;
+    at.textures = txt1;
+    at.timeQueues = tQ1;
+
+    this->graphics.animateEntity(enemy_id, at, at);
+
 }
 
 void Game::makeTrap(const int x, const int y)
@@ -191,6 +210,19 @@ void Game::actOne()
     this->graphics.loadTextureFromImage("star.png");
     this->graphics.loadTextureFromImage("collision.png");
     this->graphics.loadTextureFromImage("attack.png");
+
+    this->graphics.loadTextureFromImage("dummy.png");
+    this->graphics.loadTextureFromImage("dummy2.png");
+
+    this->graphics.loadTextureFromImage("dummy_strike.png");
+
+    this->graphics.loadTextureFromImage("trap1.png");
+    this->graphics.loadTextureFromImage("trap2.png");
+    this->graphics.loadTextureFromImage("trap_a1.png");
+    this->graphics.loadTextureFromImage("trap_a2.png");
+
+    this->graphics.loadTextureFromImage("wall.png");
+
     this->starNum = GetRandomValue(5, 10);
     for (int i = 0; i < this->starNum; ++i)
     {
@@ -208,14 +240,6 @@ void Game::actOne()
 
     for (int i = 0; i < 5; ++i)
     {
-        this->makeEnemy(
-            GetRandomValue(0, 1000),
-            GetRandomValue(0, 1000)
-        );
-    }
-
-    for (int i = 0; i < 5; ++i)
-    {
         this->makeTrap(
             GetRandomValue(0, 1000),
             GetRandomValue(0, 1000)
@@ -228,15 +252,13 @@ void Game::actOne()
     // std::cout << mc_id << std::endl;
     this->graphics.centerCamera(mc_id);
 
-    this->graphics.loadTextureFromImage("dummy.png");
-    this->graphics.loadTextureFromImage("dummy2.png");
-
-    this->graphics.loadTextureFromImage("trap1.png");
-    this->graphics.loadTextureFromImage("trap2.png");
-    this->graphics.loadTextureFromImage("trap_a1.png");
-    this->graphics.loadTextureFromImage("trap_a2.png");
-
-    this->graphics.loadTextureFromImage("wall.png");
+    for (int i = 0; i < 5; ++i)
+    {
+        this->makeEnemy(
+            GetRandomValue(0, 1000),
+            GetRandomValue(0, 1000)
+        );
+    }
 
     animateMainCharacter(&(this->graphics), mc_id);
 

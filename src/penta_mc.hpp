@@ -134,6 +134,7 @@ struct Entity : GameObject
 namespace ObjectHandler
 {
     const Vector2 getCenter(GameObject* obj);
+    bool collided(GameObject* obj_1, GameObject* obj_2);
 }
 
 

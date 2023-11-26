@@ -47,3 +47,17 @@ const Vector2 ObjectHandler::getCenter(GameObject* obj)
         obj->coordinates.y + (obj->texture->height / 2)
     };
 }
+
+bool ObjectHandler::collided(GameObject* obj_1, GameObject* obj_2)
+{
+    if (obj_1->coordinates.x < obj_2->coordinates.x + obj_2->texture->width
+    && obj_1->coordinates.x + obj_1->texture->width > obj_2->coordinates.x
+    && obj_1->coordinates.y < obj_2->coordinates.y + obj_2->texture->height
+    && obj_1->coordinates.y + obj_1->texture->height > obj_2->coordinates.y
+    )
+    {
+        // std::cout << "ATTACK!" << std::endl;
+        return true;
+    }
+    return false;
+}
