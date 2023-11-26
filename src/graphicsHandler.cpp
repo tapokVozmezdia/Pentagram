@@ -560,44 +560,134 @@ void GraphicsHandler::afterFightCheck()
 
 
 
+void GraphicsHandler::drawButtons()
+{
+    uint counter = 0;
+    for(auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+    {
+        if ((*it)->visible == true)
+        {
+            if (this->buttonFlag == false)
+            {
+                ClearBackground(BLACK);
+                this->buttonFlag = true;
+            }
+            DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, DARKBLUE);
+            DrawText(((*it)->text).c_str(), WIDTH / 2 - 125, 20 + 70 * counter, 24, RED);
+            (*it)->position = {(float)(WIDTH / 2 - 125), (float)(20 + 70 * counter)};
+            counter++;
+        }
+    }
+}
+
+
+
+void GraphicsHandler::linkButtons(std::list<Button>* _buttons)
+{
+    for (auto it = _buttons->begin(); it != _buttons->end(); ++it)
+    {
+        this->buttonList.push_back(&(*it));
+    }
+}
+
+
+void GraphicsHandler::buttonClickCheck()
+{
+    int mx = GetMouseX();
+    int my = GetMouseY();
+    for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+    {
+        if ((*it)->visible == false)
+        {
+            (*it)->is_clicked = false;
+            continue;
+        }
+        if (mx < (*it)->position.x + (*it)->width && 
+        mx > (*it)->position.x &&
+        my < (*it)->position.y + (*it)->height && 
+        my > (*it)->position.y
+        && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        {
+            (*it)->is_clicked = true;
+            
+            std::cout << (*it)->text + " BUTTON PRESSED!" << std::endl;
+
+            this->buttonManage((*it)->text);
+
+            break;
+        }
+        (*it)->is_clicked = false;
+    }
+}
+
+
+void GraphicsHandler::buttonManage(std::string& button_text)
+{
+    if (button_text == "PLAY")
+    {
+        this->buttonFlag = false;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            (*it)->visible = false;
+        }
+    }
+    if (button_text == "QUIT")
+    {
+        exit(0);
+    }
+}
+
+
 void GraphicsHandler::run()
 {
     BeginDrawing();
 
-        ClearBackground(BLACK);
 
-        if (this->cameraTarget != nullptr)
+        this->drawButtons();
+
+        this->buttonClickCheck();
+
+        if (this->buttonFlag == false)
         {
-            this->activeCamera.target = *(this->cameraTarget);
-        }
 
 
-        if (this->hostilityFlag)
-        {
-            this->enemyHostile();
-        }
 
+            ClearBackground(BLACK);
 
-        this->collisionCheck();
-        this->animationCheck();
-        this->afterFightCheck();
-
-        BeginMode2D(this->activeCamera);
-
-            for (auto i : objectList)
+            if (this->cameraTarget != nullptr)
             {
-                // std::cout << "NOT EMPTY " << std::endl;
-                // std::cout << "POSITION: " << i.coordinates.x << 
-                //     " " << i.coordinates.y << std::endl;
-
-                DrawTexture(*(i->texture), i->coordinates.x, i->coordinates.y, Color{255,255,255,255});
+                this->activeCamera.target = *(this->cameraTarget);
             }
 
-        EndMode2D();
+
+            if (this->hostilityFlag)
+            {
+                this->enemyHostile();
+            }
+
+
+            this->collisionCheck();
+            this->animationCheck();
+            this->afterFightCheck();
+
+            BeginMode2D(this->activeCamera);
+
+                for (auto i : objectList)
+                {
+                    // std::cout << "NOT EMPTY " << std::endl;
+                    // std::cout << "POSITION: " << i.coordinates.x << 
+                    //     " " << i.coordinates.y << std::endl;
+
+                    DrawTexture(*(i->texture), i->coordinates.x, i->coordinates.y, Color{255,255,255,255});
+                }
+
+            EndMode2D();
+
+            this->resetCollisions();
+
+        }
 
         DrawText("PROJECT PENTAGRAM", 10, 10, 32, DARKPURPLE);
-
-        this->resetCollisions();
 
     EndDrawing();
 }

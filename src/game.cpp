@@ -219,6 +219,8 @@ Game::Game(uint fps, uint screenWidth,  uint screenHeight)
         throw std::underflow_error("invalid arguments for constructor of Game class");
     }
 
+    this->menu.linkMenu(&(this->graphics));
+
     InitWindow(screenWidth, screenHeight, "Project Pentagram");
     InitAudioDevice();
     SetTargetFPS(fps);
@@ -230,6 +232,8 @@ Game::Game(uint screenWidth,  uint screenHeight)
     {
         throw std::underflow_error("invalid arguments for constructor of Game class");
     }
+
+    this->menu.linkMenu(&(this->graphics));
 
     InitWindow(screenWidth, screenHeight, "Project Pentagram");
     InitAudioDevice();
@@ -248,12 +252,15 @@ void Game::run()
 
     while(!WindowShouldClose())
     {
-        Controls::moveWASD(this->objectNameMap["MC"], &(this->graphics));
-        Controls::attackLMC(this->objectNameMap["MC"], &(this->graphics));
-        for (int i = 0; i < this->starNum; ++i)
+        if (!(this->menu.isOn()))
         {
-            Controls::vibrate(this->objectNameMap["star" + std::to_string(i)], 
-                &(this->graphics), 1);
+            Controls::moveWASD(this->objectNameMap["MC"], &(this->graphics));
+            Controls::attackLMC(this->objectNameMap["MC"], &(this->graphics));
+            for (int i = 0; i < this->starNum; ++i)
+            {
+                Controls::vibrate(this->objectNameMap["star" + std::to_string(i)], 
+                    &(this->graphics), 1);
+            }
         }
         this->graphics.perform();
     }
@@ -298,16 +305,6 @@ void Game::actOne()
     }
 
 
-    this->starNum = GetRandomValue(5, 10);
-    for (int i = 0; i < this->starNum; ++i)
-    {
-        int x = GetRandomValue(0, 1000);
-        int y = GetRandomValue(0, 1000);
-        llint tmp = (this->graphics.spawnTexture("star.png", x, y));
-        this->objectNameMap["star" + std::to_string(i)] = tmp;
-    }
-
-
     // WARNING
     // THIS DRAINS MEMORY BCS RIGHT NOW TO EVERY ENEMY THERE IS A UNIQUE 
     // ANIMATION, BUT THEY ALL COULD BE THE SAME SO ONLY ONE TAKES MEMORY
@@ -319,6 +316,15 @@ void Game::actOne()
             GetRandomValue(0, 1000),
             GetRandomValue(0, 1000)
         );
+    }
+
+    this->starNum = GetRandomValue(5, 10);
+    for (int i = 0; i < this->starNum; ++i)
+    {
+        int x = GetRandomValue(0, 1000);
+        int y = GetRandomValue(0, 1000);
+        llint tmp = (this->graphics.spawnTexture("star.png", x, y));
+        this->objectNameMap["star" + std::to_string(i)] = tmp;
     }
 
     llint mc_id = (this->graphics.spawnEntity("robot.png", 100, 100, 10, 1000, Team::MAIN));

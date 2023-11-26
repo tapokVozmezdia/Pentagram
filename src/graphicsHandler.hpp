@@ -65,6 +65,10 @@ class GraphicsHandler
 
         void clearAll(); // removes all textures (irreversable)
 
+        void drawButtons();
+        void linkButtons(std::list<Button>* _buttons);
+        void buttonClickCheck();
+
         void perform();
 
 
@@ -84,10 +88,15 @@ class GraphicsHandler
 
         void afterFightCheck();
 
+        void buttonManage(std::string& button_text);
+
         Camera2D activeCamera {0};
         Vector2* cameraTarget = nullptr;
         llint targetId;
+
+        bool buttonFlag = false;
         
+        std::list<Button*> buttonList;
         std::list<GameObject*> objectList;
         std::list<llint> wallIndexList;
         

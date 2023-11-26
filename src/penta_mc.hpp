@@ -90,6 +90,18 @@ typedef enum
 } Team;
 
 
+struct Button
+{
+    llint button_id;
+    std::string text;
+    bool visible;
+    uint width = 250;
+    uint height = 50;
+    bool is_clicked = false;
+    Vector2 position = {0, 0};
+};
+
+
 struct Animation
 {
     std::list<Texture2D*>  textures;
@@ -110,6 +122,7 @@ struct GameObject
     bool collision; // Is the object collided
     bool isWall = false;
     bool nL = false; // Crutch for inheritance 
+    bool isButton = false;
 };
 
 // Basic Entity type

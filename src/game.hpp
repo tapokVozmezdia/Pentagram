@@ -15,6 +15,9 @@ class Game
     private:
 
         GraphicsHandler graphics;    
+
+        Menu menu;
+
         std::unordered_map<std::string, llint> objectNameMap;
 
         // llint mainCharachetrId;
