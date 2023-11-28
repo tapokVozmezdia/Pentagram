@@ -29,7 +29,7 @@
 #endif
 
 #ifndef CHARACTER_SPEED
-    #define CHARACTER_SPEED 9.f
+    #define CHARACTER_SPEED 12.f // DEFAULT = 9.f
 #endif
 
 #ifndef ENEMY_SPEED
@@ -90,6 +90,24 @@ typedef enum
 } Team;
 
 
+typedef enum 
+{
+    LEFT = 0,
+    DOWN,
+    RIGHT,
+    TOP
+} SingularDirection;
+
+
+struct Directions
+{
+    bool left;
+    bool down;
+    bool right;
+    bool top;
+};
+
+
 struct Button
 {
     llint button_id;
@@ -128,8 +146,8 @@ struct GameObject
 // Basic Entity type
 struct Entity : GameObject
 {   
-    uint baseDamage;
-    uint baseHP;
+    int baseDamage;
+    int baseHP;
     int curHP;
     std::shared_ptr<Animation> attackAnimation = nullptr;
     std::shared_ptr<Animation> getHitAnimation = nullptr;

@@ -16,6 +16,10 @@ GraphicsHandler::~GraphicsHandler()
         delete obj;
     }
     this->objectList.clear();
+    for (auto it = this->textureMap.begin(); it != this->textureMap.end(); ++it)
+    {
+        UnloadTexture((*it).second);
+    }
     this->textureMap.clear();
 }
 
@@ -394,7 +398,7 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
         if ((((Entity*)(i))->isAttacking == true 
             && ((Entity*)(j))->isTrap == false) && 
             ((((Entity*)(j))->team != ((Entity*)(i))->team) ||
-            ((Entity*)(i))->isTrap == true)
+            (((Entity*)(i))->isTrap == true && ((Entity*)(i))->baseDamage >= 0))
             )
 
         {
@@ -402,17 +406,25 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
             std::cout << "OBJECT " << ((Entity*)(j))->objectId <<
                 " IS AT " << ((Entity*)(j))->curHP << 
                 " HEALTH POINTS" << std::endl;
+            if (((Entity*)(i))->baseDamage <= 0)
+            {
+                this->deleteTexture(((Entity*)(i))->objectId);
+            }
         }
         if ((((Entity*)(j))->isAttacking == true
             && ((Entity*)(i))->isTrap == false) && 
             ((((Entity*)(j))->team != ((Entity*)(i))->team) 
-            || ((Entity*)(j))->isTrap == true)
+            || (((Entity*)(j))->isTrap == true && ((Entity*)(j))->baseDamage >= 0))
             )
         {
             ((Entity*)(i))->curHP -= ((Entity*)(j))->baseDamage;
             std::cout << "OBJECT " << ((Entity*)(i))->objectId <<
                 " IS AT " << ((Entity*)(i))->curHP << 
                 " HEALTH POINTS" << std::endl;
+            if (((Entity*)(j))->baseDamage <= 0)
+            {
+                this->deleteTexture(((Entity*)(j))->objectId);
+            }
         }
     }
 }
@@ -610,7 +622,7 @@ void GraphicsHandler::buttonClickCheck()
         {
             (*it)->is_clicked = true;
             
-            std::cout << (*it)->text + " BUTTON PRESSED!" << std::endl;
+            // std::cout << (*it)->text + " BUTTON PRESSED!" << std::endl;
 
             this->buttonManage((*it)->text);
 
@@ -688,6 +700,28 @@ void GraphicsHandler::run()
         }
 
         DrawText("PROJECT PENTAGRAM", 10, 10, 32, DARKPURPLE);
+
+        DrawText(("HP: " + std::to_string(((Entity*)(this->objectMap[this->targetId]))->curHP)).c_str(), 10, 42, 32, RED);
+
+        // For level-design purposes
+        int xc, yc;
+        int boost_x = 0, boost_y = 0;
+        if (this->activeCamera.target.x < 0)
+        {
+            boost_x++;
+        }
+        if (this->activeCamera.target.y < 0)
+        {
+            boost_y++;
+        }
+
+        DrawText(("BLOCK X: " + std::to_string(
+            (int)(this->activeCamera.target.x / 200) - boost_x
+        )).c_str(), 10, 74, 32, GREEN);
+
+        DrawText(("BLOCK Y: " + std::to_string(
+            (int)(this->activeCamera.target.y / 200) - boost_y
+        )).c_str(), 10, 106, 32, GREEN);
 
     EndDrawing();
 }
