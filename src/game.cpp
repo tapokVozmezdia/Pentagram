@@ -503,7 +503,7 @@ void Game::run()
             this->actOne();
         }
 
-        if (!(this->menu.isOn()))
+        if (!(this->menu.isOn()) && !(this->menu.gameEnded()))
         {
             Controls::moveWASD(this->objectNameMap["MC"], &(this->graphics));
             Controls::attackLMC(this->objectNameMap["MC"], &(this->graphics));

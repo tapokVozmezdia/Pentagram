@@ -132,6 +132,7 @@ void GraphicsHandler::trapFromEntity(const llint object_id)
 
 void GraphicsHandler::deleteTexture(const llint object_id)
 {
+    std::cout << "MUST DELETE" << std::endl;
     for(auto it = this->objectList.begin(); it != this->objectList.end(); it++)
     {
         if ((*it)->objectId == object_id)
@@ -151,8 +152,8 @@ void GraphicsHandler::deleteTexture(const llint object_id)
             delete (this->objectMap[object_id]);
             this->objectMap.erase(object_id);
             this->objectList.erase(it);
+            break;
         }
-        break;
     }
 }
 
@@ -635,7 +636,10 @@ void GraphicsHandler::afterFightCheck()
             if (((Entity*)(it))->curHP <= 0)
             {
                 if ((it)->objectId == this->targetId)
+                {
                     this->startFlag = false;
+                    this->cameraTarget = nullptr;
+                }    
                 to_delete_list.push_back(it->objectId);
             }
         }
@@ -821,42 +825,45 @@ void GraphicsHandler::run()
             this->animationCheck();
             this->afterFightCheck();
 
-            BeginMode2D(this->activeCamera);
+            if (this->cameraTarget != nullptr)
+            {
+                BeginMode2D(this->activeCamera);
 
-                for (auto i : objectList)
+                    for (auto i : objectList)
+                    {
+                        // std::cout << "NOT EMPTY " << std::endl;
+                        // std::cout << "POSITION: " << i.coordinates.x << 
+                        //     " " << i.coordinates.y << std::endl;
+
+                        DrawTexture(*(i->texture), i->coordinates.x, i->coordinates.y, Color{255,255,255,255});
+                    }
+
+                EndMode2D();
+
+                this->resetCollisions();
+
+                DrawText(("HP: " + std::to_string(((Entity*)(this->objectMap[this->targetId]))->curHP)).c_str(), 10, 42, 32, RED);
+
+                // For level-design purposes
+                int xc, yc;
+                int boost_x = 0, boost_y = 0;
+                if (this->activeCamera.target.x < 0)
                 {
-                    // std::cout << "NOT EMPTY " << std::endl;
-                    // std::cout << "POSITION: " << i.coordinates.x << 
-                    //     " " << i.coordinates.y << std::endl;
-
-                    DrawTexture(*(i->texture), i->coordinates.x, i->coordinates.y, Color{255,255,255,255});
+                    boost_x++;
+                }
+                if (this->activeCamera.target.y < 0)
+                {
+                    boost_y++;
                 }
 
-            EndMode2D();
+                DrawText(("BLOCK X: " + std::to_string(
+                    (int)(this->activeCamera.target.x / 200) - boost_x
+                )).c_str(), 10, 74, 32, GREEN);
 
-            this->resetCollisions();
-
-            DrawText(("HP: " + std::to_string(((Entity*)(this->objectMap[this->targetId]))->curHP)).c_str(), 10, 42, 32, RED);
-
-            // For level-design purposes
-            int xc, yc;
-            int boost_x = 0, boost_y = 0;
-            if (this->activeCamera.target.x < 0)
-            {
-                boost_x++;
+                DrawText(("BLOCK Y: " + std::to_string(
+                    (int)(this->activeCamera.target.y / 200) - boost_y
+                )).c_str(), 10, 106, 32, GREEN);
             }
-            if (this->activeCamera.target.y < 0)
-            {
-                boost_y++;
-            }
-
-            DrawText(("BLOCK X: " + std::to_string(
-                (int)(this->activeCamera.target.x / 200) - boost_x
-            )).c_str(), 10, 74, 32, GREEN);
-
-            DrawText(("BLOCK Y: " + std::to_string(
-                (int)(this->activeCamera.target.y / 200) - boost_y
-            )).c_str(), 10, 106, 32, GREEN);
 
         }
 
