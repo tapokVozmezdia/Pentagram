@@ -75,6 +75,11 @@ class GraphicsHandler
 
         void perform();
 
+        void flagTheStart();
+
+        // Returns false in the camera center is lost, else true
+        bool checkPulse(); 
+
 
     private:
         void run();
@@ -99,6 +104,8 @@ class GraphicsHandler
         llint targetId;
 
         bool buttonFlag = false;
+
+        bool startFlag = false;
         
         Button* buttonPressed = nullptr;
 

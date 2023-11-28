@@ -16,6 +16,8 @@ GraphicsHandler::~GraphicsHandler()
         delete obj;
     }
     this->objectList.clear();
+    this->objectMap.clear();
+    this->wallIndexList.clear();
     for (auto it = this->textureMap.begin(); it != this->textureMap.end(); ++it)
     {
         UnloadTexture((*it).second);
@@ -146,10 +148,11 @@ void GraphicsHandler::deleteTexture(const llint object_id)
                     }
                 }
             }
-            delete this->objectMap[object_id];
+            delete (this->objectMap[object_id]);
             this->objectMap.erase(object_id);
             this->objectList.erase(it);
         }
+        break;
     }
 }
 
@@ -297,7 +300,15 @@ void GraphicsHandler::centerCamera(llint t_id)
 
 void GraphicsHandler::clearAll()
 {
+    for(auto obj : this->objectList)
+    {
+        delete obj;
+    }
     this->objectList.clear();
+    this->objectMap.clear();
+    this->wallIndexList.clear();
+
+    this->cameraTarget = nullptr;
 }
 
 void GraphicsHandler::perform()
@@ -623,6 +634,8 @@ void GraphicsHandler::afterFightCheck()
         {
             if (((Entity*)(it))->curHP <= 0)
             {
+                if ((it)->objectId == this->targetId)
+                    this->startFlag = false;
                 to_delete_list.push_back(it->objectId);
             }
         }
@@ -639,6 +652,7 @@ void GraphicsHandler::afterFightCheck()
 void GraphicsHandler::drawButtons()
 {
     uint counter = 0;
+    bool tmp_flag = false;
     for(auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
     {
         if ((*it)->visible == true)
@@ -647,12 +661,17 @@ void GraphicsHandler::drawButtons()
             {
                 ClearBackground(BLACK);
                 this->buttonFlag = true;
+                tmp_flag = true;
             }
             DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, DARKBLUE);
             DrawText(((*it)->text).c_str(), WIDTH / 2 - 125, 20 + 70 * counter, 24, RED);
             (*it)->position = {(float)(WIDTH / 2 - 125), (float)(20 + 70 * counter)};
             counter++;
         }
+    }
+    if (tmp_flag == false)
+    {
+        this->buttonFlag = false;
     }
 }
 
@@ -685,6 +704,14 @@ void GraphicsHandler::buttonClickCheck()
         && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             (*it)->is_clicked = true;
+
+            for (auto ik = this->buttonList.begin(); ik != this->buttonList.end(); ik++)
+            {
+                if ((*ik)->button_id != (*it)->button_id)
+                {
+                    (*ik)->is_clicked = false;
+                }
+            }
             
             std::cout << (*it)->text + " BUTTON PRESSED!" << std::endl;
 
@@ -746,6 +773,16 @@ void GraphicsHandler::buttonManage(Button* button)
     }
 }
 
+bool GraphicsHandler::checkPulse()
+{
+    return this->startFlag;
+}
+
+void GraphicsHandler::flagTheStart()
+{
+    this->startFlag = true;
+}
+
 
 void GraphicsHandler::run()
 {
@@ -758,9 +795,12 @@ void GraphicsHandler::run()
 
         this->buttonClickCheck();
 
-        if (this->buttonFlag == false)
+        if (this->buttonFlag == false && this->startFlag == true)
         {
-
+            for (auto ik = this->buttonList.begin(); ik != this->buttonList.end(); ik++)
+            {
+                (*ik)->is_clicked = false;
+            }
 
 
             ClearBackground(BLACK);
@@ -796,31 +836,32 @@ void GraphicsHandler::run()
 
             this->resetCollisions();
 
+            DrawText(("HP: " + std::to_string(((Entity*)(this->objectMap[this->targetId]))->curHP)).c_str(), 10, 42, 32, RED);
+
+            // For level-design purposes
+            int xc, yc;
+            int boost_x = 0, boost_y = 0;
+            if (this->activeCamera.target.x < 0)
+            {
+                boost_x++;
+            }
+            if (this->activeCamera.target.y < 0)
+            {
+                boost_y++;
+            }
+
+            DrawText(("BLOCK X: " + std::to_string(
+                (int)(this->activeCamera.target.x / 200) - boost_x
+            )).c_str(), 10, 74, 32, GREEN);
+
+            DrawText(("BLOCK Y: " + std::to_string(
+                (int)(this->activeCamera.target.y / 200) - boost_y
+            )).c_str(), 10, 106, 32, GREEN);
+
         }
 
         DrawText("PROJECT PENTAGRAM", 10, 10, 32, DARKPURPLE);
 
-        DrawText(("HP: " + std::to_string(((Entity*)(this->objectMap[this->targetId]))->curHP)).c_str(), 10, 42, 32, RED);
-
-        // For level-design purposes
-        int xc, yc;
-        int boost_x = 0, boost_y = 0;
-        if (this->activeCamera.target.x < 0)
-        {
-            boost_x++;
-        }
-        if (this->activeCamera.target.y < 0)
-        {
-            boost_y++;
-        }
-
-        DrawText(("BLOCK X: " + std::to_string(
-            (int)(this->activeCamera.target.x / 200) - boost_x
-        )).c_str(), 10, 74, 32, GREEN);
-
-        DrawText(("BLOCK Y: " + std::to_string(
-            (int)(this->activeCamera.target.y / 200) - boost_y
-        )).c_str(), 10, 106, 32, GREEN);
 
     EndDrawing();
 }

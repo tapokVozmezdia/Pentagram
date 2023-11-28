@@ -25,9 +25,6 @@ void Game::makeCharacter(const int x, const int y)
     anim.timeQueues = tQ;
 
     this->graphics.animateTexture(mc_id, anim);
-
-    for(int i = 1; i <= 5; ++i) 
-        this->graphics.loadTextureFromImage("rA" + std::to_string(i) + ".png");
     
     Animation at;
 
@@ -496,10 +493,16 @@ Game::~Game()
 
 void Game::run()
 {
-    this->actOne();
+    this->loadTextures();
 
     while(!WindowShouldClose())
     {
+        if (this->menu.actOneInitiated(&(this->graphics)))
+        {
+            // std::cout << "MOGUS MOGUS MOGUS" << std::endl;
+            this->actOne();
+        }
+
         if (!(this->menu.isOn()))
         {
             Controls::moveWASD(this->objectNameMap["MC"], &(this->graphics));
@@ -512,11 +515,20 @@ void Game::run()
 
             }
         }
+
+        if (this->menu.gameEnded() && this->menu.menuInGameFlag())
+        {
+            // std::cout << "GOT HERE" << std::endl;
+            this->menu.defaultAllButtons();
+            this->objectNameMap.clear();
+            starNum = 0;
+        }
+
         this->graphics.perform();
     }
 }
 
-void Game::actOne()
+void Game::loadTextures()
 {
     this->graphics.loadTextureFromImage("robot.png");
     this->graphics.loadTextureFromImage("robot2.png");
@@ -554,6 +566,13 @@ void Game::actOne()
         this->graphics.loadTextureFromImage("heal" + std::to_string(i) + ".png");
         this->graphics.loadTextureFromImage("energy_ball" + std::to_string(i) + ".png");
     }
+
+    for(int i = 1; i <= 5; ++i) 
+        this->graphics.loadTextureFromImage("rA" + std::to_string(i) + ".png");
+}
+
+void Game::actOne()
+{
     // int c1 = -1000, c2 = -1000;
 
     // for (int i = 0; i < 10; ++i)
@@ -682,7 +701,7 @@ void Game::actOne()
     this->spawnRoboss(54, 9);
 
     //Traps & heals before, enemies after
-    this->makeCharacter(-300, -300);
+    this->makeCharacter(0, 0);
 
     this->makeEnemy(4, 0);
     this->makeEnemy(12, 2);

@@ -27,6 +27,10 @@ class Game
         uint screenWidth, screnHeight;
         uint starNum = 0;
 
+
+        void loadTextures();
+
+
         void actOne();
         void makeCharacter(const int x, const int y);
         void makeEnemy(int x, int y);
