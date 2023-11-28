@@ -37,7 +37,7 @@ Texture2D* GraphicsHandler::getTexture(const std::string& tName)
     return &(this->textureMap[tName]);
 }
 
-llint GraphicsHandler::spawnTexture(const std::string& txtr, Vector2& pos)
+llint GraphicsHandler::spawnTexture(const std::string& txtr, const Vector2& pos)
 {
     GameObject* obj = new GameObject();
     obj->texture = &(this->textureMap[txtr]);
@@ -184,6 +184,31 @@ void GraphicsHandler::triggerAttack(const llint t_id)
 }
 
 
+llint GraphicsHandler::fireProjectile(const std::string& txtr, const Vector2& src, 
+    const Vector2& trgt, const int dmg, const double speed,
+    const Animation& flight, const Animation& hit)
+{
+    Projectile* pr = new Projectile();
+
+    pr->animation = std::make_shared<Animation>(flight);
+    pr->hitAnimation = std::make_shared<Animation>(hit);
+    pr->texture = &(this->textureMap[txtr]);
+    pr->coordinates.x = src.x;
+    pr->coordinates.y = src.y;
+    pr->target.x = trgt.x;
+    pr->target.y = trgt.y;
+    pr->objectId = IdCounter::getFreeId();
+    pr->collision = false;
+    pr->damage = dmg;
+    pr->speedModifier = speed;
+    pr->nLP = true;
+
+
+    this->objectList.push_back(pr);
+    this->objectMap[this->objectList.back()->objectId] = (this->objectList.back());
+    return this->objectList.back()->objectId;
+}
+
 
 void GraphicsHandler::enemyHostilityTriggerOn()
 {
@@ -226,7 +251,7 @@ void GraphicsHandler::moveTextureDelta(const llint t_id, float dx, float dy)
     this->objectMap[t_id]->coordinates.y += dy;
 }
 
-void GraphicsHandler::moveTextureDelta(const llint t_id, Vector2& ds)
+void GraphicsHandler::moveTextureDelta(const llint t_id, const Vector2& ds)
 {
     float w_x = this->objectMap[t_id]->coordinates.x + ds.x;
     float w_y = this->objectMap[t_id]->coordinates.y + ds.y;
@@ -323,7 +348,7 @@ void GraphicsHandler::animationCheck()
     for (auto i = this->objectList.begin(); 
         i != this->objectList.end(); ++i)
     {
-        if ((*i)->nL == false) // If not Entity
+        if ((*i)->nL == false && (*i)->nLP == false) // If not Entity/Projectile
         {
             if ((*i)->animation == nullptr)
                 continue;
@@ -338,6 +363,43 @@ void GraphicsHandler::animationCheck()
                 continue;
             }
             ((*i)->animation->curTime)++;
+            continue;
+        }
+
+        if((*i)->nLP == true) // For projectiles
+        {
+            // if (((Projectile*)(*i))->exploded)
+            // {
+            //     llint tmp_id = this->spawnTexture(
+            //     *(((Projectile*)(*i))->hitAnimation->textureNames.begin()), 
+            //     (*i)->coordinates
+            //     );
+
+            //     this->animateTexture(tmp_id, *(((Projectile*)(*i))->hitAnimation));
+
+            //     this->objectMap[tmp_id]->mark = true;
+
+            //     this->deleteTexture((*i)->objectId);
+            // }
+            // if ((ObjectHandler::measureDistance(
+            //     ObjectHandler::getCenter(*i), ((Projectile*)(*i))->target)
+            // ) <= ((Projectile*)(*i))->speedModifier * PROJECTILE_SPEED)
+            // {
+            //     this->moveTextureAbs((*i)->objectId, ((Projectile*)(*i))->target);
+            //     ((Projectile*)(*i))->exploded = true;
+            // }
+            // else
+            // {
+            //     auto tmp_vec = ObjectHandler::getVectorWithLength(
+            //         ObjectHandler::getVectorDiff(
+            //             ObjectHandler::getCenter(*i),
+            //             ((Projectile*)(*i))->target
+            //         ),
+            //         ((Projectile*)(*i))->speedModifier * PROJECTILE_SPEED
+            //     );
+            //     this->moveTextureDelta((*i)->objectId, tmp_vec);
+            //     // std::cout << "MUST MOVE ENERGY BALL: " << tmp_vec.x << " " << tmp_vec.y << std::endl;
+            // }
             continue;
         }
 
@@ -403,6 +465,7 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
 
         {
             ((Entity*)(j))->curHP -= ((Entity*)(i))->baseDamage;
+            if (((Entity*)(j))->team != MAIN)
             std::cout << "OBJECT " << ((Entity*)(j))->objectId <<
                 " IS AT " << ((Entity*)(j))->curHP << 
                 " HEALTH POINTS" << std::endl;
@@ -418,6 +481,7 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
             )
         {
             ((Entity*)(i))->curHP -= ((Entity*)(j))->baseDamage;
+            if (((Entity*)(i))->team != MAIN)
             std::cout << "OBJECT " << ((Entity*)(i))->objectId <<
                 " IS AT " << ((Entity*)(i))->curHP << 
                 " HEALTH POINTS" << std::endl;
@@ -622,9 +686,9 @@ void GraphicsHandler::buttonClickCheck()
         {
             (*it)->is_clicked = true;
             
-            // std::cout << (*it)->text + " BUTTON PRESSED!" << std::endl;
+            std::cout << (*it)->text + " BUTTON PRESSED!" << std::endl;
 
-            this->buttonManage((*it)->text);
+            this->buttonManage(*it);
 
             break;
         }
@@ -633,9 +697,41 @@ void GraphicsHandler::buttonClickCheck()
 }
 
 
-void GraphicsHandler::buttonManage(std::string& button_text)
+void GraphicsHandler::buttonManage(Button* button)
 {
-    if (button_text == "PLAY")
+    if (button->text == "PLAY")
+    {
+        int i = 1;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            if (i > 3 && i < 6)
+            {
+                (*it)->visible = true;
+            }
+            else
+            {
+                (*it)->visible = false;
+            }
+            i++;
+        }
+    }
+    if (button->text == "LEVELS")
+    {
+        int i = 1;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            if (i > 5 && i < 10)
+            {
+                (*it)->visible = true;
+            }
+            else
+            {
+                (*it)->visible = false;
+            }
+            i++;
+        }
+    }
+    if (button->text == "LEVEL 1")
     {
         this->buttonFlag = false;
         for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
@@ -643,7 +739,8 @@ void GraphicsHandler::buttonManage(std::string& button_text)
             (*it)->visible = false;
         }
     }
-    if (button_text == "QUIT")
+    
+    if (button->text == "QUIT")
     {
         exit(0);
     }
@@ -654,6 +751,8 @@ void GraphicsHandler::run()
 {
     BeginDrawing();
 
+
+        ClearBackground(BLACK);
 
         this->drawButtons();
 

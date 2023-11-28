@@ -40,6 +40,10 @@
     #define ENEMY_VISIBILITY 450
 #endif
 
+#ifndef PROJECTILE_SPEED
+    #define PROJECTILE_SPEED 15.f
+#endif
+
 #ifndef NOISE_FREQUENCY
     #define NOISE_FREQUENCY 2.5
 #endif
@@ -117,6 +121,8 @@ struct Button
     uint height = 50;
     bool is_clicked = false;
     Vector2 position = {0, 0};
+    std::list<bool> ButtonVisibilityTrace;
+    Button* parent = nullptr;
 };
 
 
@@ -139,8 +145,10 @@ struct GameObject
     std::shared_ptr<Animation> animation = nullptr;
     bool collision; // Is the object collided
     bool isWall = false;
-    bool nL = false; // Crutch for inheritance 
+    bool nL = false; // Crutch for inheritance, for Entities
+    bool nLP = false; 
     bool isButton = false;
+    bool mark = false;
 };
 
 // Basic Entity type
@@ -162,10 +170,23 @@ struct Entity : GameObject
 };
 
 
+struct Projectile : GameObject
+{
+    int damage;
+    bool isExplosive = true;
+    bool exploded;
+    std::shared_ptr<Animation> hitAnimation = nullptr;
+    Vector2 target;
+    double speedModifier = 1;
+};
+
 namespace ObjectHandler
 {
     const Vector2 getCenter(GameObject* obj);
     bool collided(GameObject* obj_1, GameObject* obj_2);
+    double measureDistance(const Vector2& u, const Vector2& v);
+    const Vector2 getVectorDiff(const Vector2& u, const Vector2& v);
+    const Vector2 getVectorWithLength(const Vector2& u, double lngth); // Returns same vector with different length
 }
 
 

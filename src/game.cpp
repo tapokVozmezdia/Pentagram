@@ -2,7 +2,7 @@
 
 void Game::makeCharacter(const int x, const int y)
 {
-    llint mc_id = (this->graphics.spawnEntity("robot.png", x - 100, y - 100, 10, 1000, Team::MAIN));
+    llint mc_id = (this->graphics.spawnEntity("robot.png", x - 100, y - 100, 12, 1000, Team::MAIN));
     this->objectNameMap["MC"] = mc_id;
     // std::cout << "mc_id: " << std::endl;
     // std::cout << mc_id << std::endl;
@@ -289,6 +289,51 @@ void Game::makeFloor(const int x, const int y)
 }
 
 
+
+void Game::launchEnergyBall(int x, int y, int t_x, int t_y)
+{
+    Animation a1, a2;
+
+    std::list<Texture2D*> txt;
+    std::list<std::string> nTxt;
+    std::vector<double> tQ;
+
+    std::list<Texture2D*> txt1;
+    std::list<std::string> nTxt1;
+    std::vector<double> tQ1;
+
+    for (int i = 1; i <= 5; ++i)
+    {
+        txt.push_back(this->graphics.getTexture("energy_ball" + std::to_string(i) + ".png"));
+        nTxt.push_back("energy_ball" + std::to_string(i) + ".png");
+        tQ.push_back(0.07);
+    }
+
+    for (int i = 1; i <= 9; ++i)
+    {
+        txt1.push_back(this->graphics.getTexture("eb_exp" + std::to_string(i) + ".png"));
+        nTxt1.push_back("eb_exp" + std::to_string(i) + ".png");
+        if (i != 9)
+            tQ1.push_back(0.09);
+    }
+    tQ1.push_back(2);
+
+    a1.textures = txt;
+    a1.textureNames = nTxt;
+    a1.timeQueues = tQ;
+
+    a2.textures = txt1;
+    a2.textureNames = nTxt1;
+    a2.timeQueues = tQ1;
+
+    this->graphics.fireProjectile(
+        "energy_ball1.png", {(float)x, (float)y}, {(float)t_x, (float)t_x}, 
+        60, 1, a1, a2
+    );
+}
+
+
+
 void Game::createRoom(int x, int y, const int wdth, const int hgth, const Directions& exits)
 {
     x = x * 200;
@@ -459,10 +504,12 @@ void Game::run()
         {
             Controls::moveWASD(this->objectNameMap["MC"], &(this->graphics));
             Controls::attackLMC(this->objectNameMap["MC"], &(this->graphics));
+
             for (int i = 0; i < this->starNum; ++i)
             {
                 Controls::vibrate(this->objectNameMap["star" + std::to_string(i)], 
                     &(this->graphics), 1);
+
             }
         }
         this->graphics.perform();
@@ -499,9 +546,14 @@ void Game::actOne()
 
     this->graphics.loadTextureFromImage("roboss1.png");
 
-    for (int i = 1; i <= 5; ++i) 
-        this->graphics.loadTextureFromImage("heal" + std::to_string(i) + ".png");
+    for (int i = 1; i <= 9; ++i)
+        this->graphics.loadTextureFromImage("eb_exp" + std::to_string(i) + ".png");
 
+    for (int i = 1; i <= 5; ++i) 
+    {
+        this->graphics.loadTextureFromImage("heal" + std::to_string(i) + ".png");
+        this->graphics.loadTextureFromImage("energy_ball" + std::to_string(i) + ".png");
+    }
     // int c1 = -1000, c2 = -1000;
 
     // for (int i = 0; i < 10; ++i)
@@ -624,6 +676,10 @@ void Game::actOne()
     this->makeHeal(47, 9);
     this->makeHeal(48, 8);
     this->makeHeal(48, 9);
+    this->makeHeal(49, 8);
+    this->makeHeal(49, 9);
+
+    this->spawnRoboss(54, 9);
 
     //Traps & heals before, enemies after
     this->makeCharacter(-300, -300);
@@ -657,7 +713,7 @@ void Game::actOne()
     this->makeEnemy(24, 7);
 
     this->makeEnemy(28, 8);
-    this->makeEnemy(28, 7);
+    this->makeEnemy(28, 9);
 
     this->makeEnemy(42, 11);
     this->makeEnemy(42, 7);
@@ -669,7 +725,7 @@ void Game::actOne()
     this->makeEnemy(44, 9);
     this->makeEnemy(44, 9);
 
-    this->spawnRoboss(54, 9);
+    // this->graphics.fireProjectile();
 
     // for (int i = 0; i < 5; ++i)
     // {

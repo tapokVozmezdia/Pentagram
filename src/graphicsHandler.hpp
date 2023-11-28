@@ -17,7 +17,7 @@ class GraphicsHandler
         Texture2D* getTexture(const std::string& tName); // Returns texture from texture map by name
 
         //Spawns basic GameObject type object
-        llint spawnTexture(const std::string& txtr, Vector2& pos); 
+        llint spawnTexture(const std::string& txtr, const Vector2& pos); 
         llint spawnTexture(const std::string& txtr, int p_x, int p_y);
 
 
@@ -44,6 +44,10 @@ class GraphicsHandler
 
         void triggerAttack(const llint t_id);
 
+        llint fireProjectile(const std::string& txtr, const Vector2& src,
+            const Vector2& trgt, const int dmg, const double speed,
+            const Animation& flight, const Animation& hit
+        );
 
         //Makes enemies attack the player
         void enemyHostilityTriggerOn(); 
@@ -58,7 +62,7 @@ class GraphicsHandler
         void moveTextureAbs(const llint t_id, Vector2& ds);
 
         void moveTextureDelta(const llint t_id, float dx, float dy);
-        void moveTextureDelta(const llint t_id, Vector2& ds);
+        void moveTextureDelta(const llint t_id, const Vector2& ds);
 
 
         void centerCamera(llint t_id); // Centers active camera on an object with given id 
@@ -88,7 +92,7 @@ class GraphicsHandler
 
         void afterFightCheck();
 
-        void buttonManage(std::string& button_text);
+        void buttonManage(Button* button);
 
         Camera2D activeCamera {0};
         Vector2* cameraTarget = nullptr;
@@ -96,6 +100,8 @@ class GraphicsHandler
 
         bool buttonFlag = false;
         
+        Button* buttonPressed = nullptr;
+
         std::list<Button*> buttonList;
         std::list<GameObject*> objectList;
         std::list<llint> wallIndexList;

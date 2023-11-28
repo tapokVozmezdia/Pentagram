@@ -61,3 +61,20 @@ bool ObjectHandler::collided(GameObject* obj_1, GameObject* obj_2)
     }
     return false;
 }
+
+double ObjectHandler::measureDistance(const Vector2& u, const Vector2& v)
+{
+    return sqrt((v.x - u.x) * (v.x - u.x) + (v.y - u.y) * (v.y - u.y));
+}
+
+//V - target, U - source
+const Vector2 ObjectHandler::getVectorDiff(const Vector2& u, const Vector2& v)
+{
+    return {v.x - u.x, v.y - u.y};
+}
+
+const Vector2 ObjectHandler::getVectorWithLength(const Vector2& u, double lngth)
+{
+    double dst = ObjectHandler::measureDistance({0, 0}, u);
+    return {u.x / (float)dst * (float)lngth, u.y / (float)dst * (float)lngth};
+}

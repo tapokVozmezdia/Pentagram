@@ -76,6 +76,11 @@ void Controls::attackLMC(const llint t_id, GraphicsHandler* graphics)
     }
 }
 
+void Controls::attackRMC(const llint t_id, GraphicsHandler* graphics)
+{
+    //
+}
+
 void Controls::vibrate(const llint t_id, GraphicsHandler* graphics, int intencity)
 {
     int r = GetRandomValue(0, 3);

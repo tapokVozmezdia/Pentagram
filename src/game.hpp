@@ -36,6 +36,8 @@ class Game
         void makeWall(const int x, const int y);
         void makeFloor(const int x, const int y);
 
+        void launchEnergyBall(int x, int y, int t_x, int t_y);
+
         void createRoom(int x, int y, const int wdth, const int hgth, const Directions& exits);
         void createWallBlock(int x, int y, const int wdth, const int hgth); // Just a box with no entrance
         void createFloorBlock(int x, int y, const int wdth, const int hgth); // -||- for floor

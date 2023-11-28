@@ -8,5 +8,7 @@ namespace Controls
 
     void attackLMC(const llint t_id, GraphicsHandler* graphics);
 
+    void attackRMC(const llint t_id, GraphicsHandler* graphics);
+
     void vibrate(const llint t_id, GraphicsHandler* graphics, int intencity);
 };
