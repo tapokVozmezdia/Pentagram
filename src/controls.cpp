@@ -35,12 +35,14 @@ void Controls::moveWASD(const llint t_id, GraphicsHandler* graphics)
         numOfInp++;
         e = G.product(e, 1);
         move[1] = true;
+
     } 
     if (IsKeyDown(KEY_D))
     {
         numOfInp++;
         e = G.product(e, 0);
         move[0] = true;
+
     }
 
 
@@ -78,7 +80,26 @@ void Controls::attackLMC(const llint t_id, GraphicsHandler* graphics)
 
 void Controls::attackRMC(const llint t_id, GraphicsHandler* graphics)
 {
-    //
+    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    {
+        Animation at;
+
+        std::list<Texture2D*> txt1;
+        std::list<std::string> nTxt1;
+        std::vector<double> tQ1;
+        for(int i = 1; i <= 5; ++i) 
+        {
+            txt1.push_back(graphics->getTexture("rA" + std::to_string(i) + ".png"));
+            nTxt1.push_back("rA" + std::to_string(i) + ".png");
+            tQ1.push_back(0.05);
+        }
+
+        at.textureNames = nTxt1;
+        at.textures = txt1;
+        at.timeQueues = tQ1;
+        graphics->playAnimationOnce({0,0}, at);
+        // std::cout << "played" << std::endl;
+    }
 }
 
 void Controls::vibrate(const llint t_id, GraphicsHandler* graphics, int intencity)

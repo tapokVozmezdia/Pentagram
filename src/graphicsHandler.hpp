@@ -26,6 +26,9 @@ class GraphicsHandler
         llint spawnEntity(const std::string& txtr, int p_x, int p_y, double dmg, double hp, Team tm);
 
 
+        void setHitbox(llint t_id, const Hitbox& hbox);
+        void setHitbox(llint t_id, const int width, const int height);
+
 
         //Transforms a GameObject into a wall
         void wallFromObject(const llint object_id);
@@ -39,8 +42,11 @@ class GraphicsHandler
         void deleteTexture(const llint object_id);
 
 
-        void animateTexture(const llint t_id, Animation& anim);
-        void animateEntity(const llint t_id, Animation& attack, Animation& hit);
+        void animateTexture(const llint t_id, const Animation& anim);
+        void animateEntity(const llint t_id, const Animation& attack, const Animation& hit);
+        void animateEntityMoving(const llint t_id, const Animation& move);
+
+
 
         void triggerAttack(const llint t_id);
 
@@ -63,6 +69,11 @@ class GraphicsHandler
 
         void moveTextureDelta(const llint t_id, float dx, float dy);
         void moveTextureDelta(const llint t_id, const Vector2& ds);
+
+        bool isFlipped(const llint t_id);
+        void flipTexture(const llint t_id);
+
+        void playAnimationOnce(const Vector2& pos, const Animation& anim);
 
 
         void centerCamera(llint t_id); // Centers active camera on an object with given id 
@@ -87,6 +98,7 @@ class GraphicsHandler
         // Sets collision for all objects in objectList
         void collisionCheck();
         void resetCollisions();
+        void resetMovement();
 
         void animationCheck();
 

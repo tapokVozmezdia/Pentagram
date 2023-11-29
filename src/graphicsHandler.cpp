@@ -84,6 +84,8 @@ llint GraphicsHandler::spawnEntity(const std::string& txtr, Vector2& pos, double
     ent->curHP = hp;
     ent->nL = true;
     ent->team = tm;
+    ent->hitbox.width = ent->texture->width;
+    ent->hitbox.height = ent->texture->height;
 
     this->objectList.push_back(ent);
     this->objectMap[this->objectList.back()->objectId] = (this->objectList.back());
@@ -104,10 +106,27 @@ llint GraphicsHandler::spawnEntity(const std::string& txtr, int p_x, int p_y, do
     ent->curHP = hp;
     ent->nL = true;
     ent->team = tm;
+    ent->hitbox.width = ent->texture->width;
+    ent->hitbox.height = ent->texture->height;
 
     this->objectList.push_back(ent);
     this->objectMap[this->objectList.back()->objectId] = (this->objectList.back());
     return this->objectList.back()->objectId;
+}
+
+
+void GraphicsHandler::setHitbox(llint t_id, const Hitbox& hbox)
+{
+    if (this->objectMap[t_id]->nL == false)
+        throw std::logic_error("Trying to set a hitbox for a non-entity object");
+    ((Entity*)(this->objectMap[t_id]))->hitbox = {hbox.width, hbox.height};
+}
+
+void GraphicsHandler::setHitbox(llint t_id, const int width, const int height)
+{
+    if (this->objectMap[t_id]->nL == false)
+        throw std::logic_error("Trying to set a hitbox for a non-entity object");
+    ((Entity*)(this->objectMap[t_id]))->hitbox = {width, height};
 }
 
 
@@ -132,7 +151,7 @@ void GraphicsHandler::trapFromEntity(const llint object_id)
 
 void GraphicsHandler::deleteTexture(const llint object_id)
 {
-    std::cout << "MUST DELETE" << std::endl;
+    // std::cout << "MUST DELETE" << std::endl;
     for(auto it = this->objectList.begin(); it != this->objectList.end(); it++)
     {
         if ((*it)->objectId == object_id)
@@ -159,7 +178,7 @@ void GraphicsHandler::deleteTexture(const llint object_id)
 
 
 
-void GraphicsHandler::animateTexture(const llint t_id, Animation& anim)
+void GraphicsHandler::animateTexture(const llint t_id, const Animation& anim)
 {
     // std::cout << "!!HERE:" << &(anim) << std::endl;
     this->objectMap[t_id]->animation = std::make_shared<Animation>(anim);
@@ -167,12 +186,19 @@ void GraphicsHandler::animateTexture(const llint t_id, Animation& anim)
     this->objectMap[t_id]->textureName = *(this->objectMap[t_id]->animation->textureNames.begin());
 }
 
-void GraphicsHandler::animateEntity(const llint t_id, Animation& attack, Animation& hit)
+void GraphicsHandler::animateEntity(const llint t_id, const Animation& attack, const Animation& hit)
 {
+    if (this->objectMap[t_id]->nL == false)
+        throw std::logic_error("trying to animate non-entity");
     ((Entity*)(this->objectMap[t_id]))->attackAnimation = std::make_shared<Animation>(attack);
 }
 
-
+void GraphicsHandler::animateEntityMoving(const llint t_id, const Animation& move)
+{
+    if (this->objectMap[t_id]->nL == false)
+        throw std::logic_error("trying to animate non-entity");
+    ((Entity*)(this->objectMap[t_id]))->movingAnimation = std::make_shared<Animation>(move);
+}
 
 
 void GraphicsHandler::triggerAttack(const llint t_id)
@@ -237,15 +263,34 @@ const llint GraphicsHandler::getLastId() const
 
 void GraphicsHandler::moveTextureDelta(const llint t_id, float dx, float dy)
 {
-    float w_x = this->objectMap[t_id]->coordinates.x + dx;
-    float w_y = this->objectMap[t_id]->coordinates.y + dy;
+    Vector2 cent = ObjectHandler::getCenter(this->objectMap[t_id]);
+    float w_x;
+    float w_y;
+    if (this->objectMap[t_id]->nL == false)
+    {
+        w_x = this->objectMap[t_id]->coordinates.x + dx;
+        w_y = this->objectMap[t_id]->coordinates.y + dy;
+    }
+    else
+    {
+        w_x = cent.x - ((((Entity*)(this->objectMap[t_id]))->hitbox.width) / 2) + dx;
+        w_y = cent.y - ((((Entity*)(this->objectMap[t_id]))->hitbox.height) / 2) + dy;
+        if ((dx < 0 && !(((Entity*)(this->objectMap[t_id]))->isFlipped))
+        ||
+        (dx > 0 && (((Entity*)(this->objectMap[t_id]))->isFlipped)))
+        {
+            this->flipTexture(t_id);
+        }
+        ((Entity*)(this->objectMap[t_id]))->hasMoved = true;
+    }
+    // w_y = this->objectMap[t_id]->coordinates.y + dy;
 
     for (auto ind : this->wallIndexList)
     {
         if ((w_x < (this->objectMap[ind]->coordinates.x + this->objectMap[ind]->texture->width) 
-        && w_x + this->objectMap[t_id]->texture->width > this->objectMap[ind]->coordinates.x 
+        && w_x + ((Entity*)(this->objectMap[t_id]))->hitbox.width > this->objectMap[ind]->coordinates.x 
         && w_y < (this->objectMap[ind]->coordinates.y + this->objectMap[ind]->texture->height) 
-        && w_y + this->objectMap[t_id]->texture->height > this->objectMap[ind]->coordinates.y))
+        && w_y + ((Entity*)(this->objectMap[t_id]))->hitbox.height > this->objectMap[ind]->coordinates.y))
         {
             return;
         }
@@ -257,22 +302,23 @@ void GraphicsHandler::moveTextureDelta(const llint t_id, float dx, float dy)
 
 void GraphicsHandler::moveTextureDelta(const llint t_id, const Vector2& ds)
 {
-    float w_x = this->objectMap[t_id]->coordinates.x + ds.x;
-    float w_y = this->objectMap[t_id]->coordinates.y + ds.y;
+    this->moveTextureDelta(t_id, ds.x, ds.y);
+    // float w_x = this->objectMap[t_id]->coordinates.x + ds.x;
+    // float w_y = this->objectMap[t_id]->coordinates.y + ds.y;
 
-    for (auto ind : this->wallIndexList)
-    {
-        if ((w_x < (this->objectMap[ind]->coordinates.x + this->objectMap[ind]->texture->width) 
-        && w_x + this->objectMap[t_id]->texture->width > this->objectMap[ind]->coordinates.x 
-        && w_y < (this->objectMap[ind]->coordinates.y + this->objectMap[ind]->texture->height) 
-        && w_y + this->objectMap[t_id]->texture->height > this->objectMap[ind]->coordinates.y))
-        {
-            return;
-        }
-    }
+    // for (auto ind : this->wallIndexList)
+    // {
+    //     if ((w_x < (this->objectMap[ind]->coordinates.x + this->objectMap[ind]->texture->width) 
+    //     && w_x + this->objectMap[t_id]->texture->width > this->objectMap[ind]->coordinates.x 
+    //     && w_y < (this->objectMap[ind]->coordinates.y + this->objectMap[ind]->texture->height) 
+    //     && w_y + this->objectMap[t_id]->texture->height > this->objectMap[ind]->coordinates.y))
+    //     {
+    //         return;
+    //     }
+    // }
 
-    this->objectMap[t_id]->coordinates.x += ds.x;
-    this->objectMap[t_id]->coordinates.y += ds.y;
+    // this->objectMap[t_id]->coordinates.x += ds.x;
+    // this->objectMap[t_id]->coordinates.y += ds.y;
 }
 
 void GraphicsHandler::moveTextureAbs(const llint t_id, int dx, int dy)
@@ -287,6 +333,23 @@ void GraphicsHandler::moveTextureAbs(const llint t_id, Vector2& ds)
     this->objectMap[t_id]->coordinates.y = ds.y;
 }
 
+
+bool GraphicsHandler::isFlipped(const llint t_id)
+{
+    return (this->objectMap[t_id]->isFlipped);
+}
+
+void GraphicsHandler::flipTexture(const llint t_id)
+{
+    this->objectMap[t_id]->isFlipped = !(this->objectMap[t_id]->isFlipped);
+}
+
+void GraphicsHandler::playAnimationOnce(const Vector2& pos, const Animation& anim)
+{
+    llint anim_id = this->spawnTexture("collision.png", pos);
+    this->animateTexture(anim_id, anim);
+    this->objectMap[anim_id]->mark = true;
+}
 
 
 
@@ -355,6 +418,17 @@ void GraphicsHandler::resetCollisions()
     }
 }
 
+void GraphicsHandler::resetMovement()
+{
+    for (auto i : this->objectList)
+    {
+        if (i->nL == true)
+        {
+            ((Entity*)(i))->hasMoved = false;
+        }
+    }
+}
+
 void GraphicsHandler::animationCheck()
 {
     for (auto i = this->objectList.begin(); 
@@ -372,9 +446,22 @@ void GraphicsHandler::animationCheck()
                 (*i)->texture = *((*i)->animation->textures.begin());
                 (*i)->textureName = *((*i)->animation->textureNames.begin());
                 (*i)->animation->curTime = 0;
-                continue;
+                if ((*i)->mark == false)
+                {
+                    continue;
+                }
+                ((*i)->EXTRA)++;
             }
             ((*i)->animation->curTime)++;
+            if ((*i)->mark == false)
+                continue;
+            // std::cout << (*i)->animation->curTime << " " <<
+            // FPS * ContainerHandler::getElementsSum(&((*i)->animation->timeQueues)) << std::endl;
+            if ((*i)->EXTRA >= (*i)->animation->timeQueues.size())
+            {
+                // std::cout << "<N>UST" << std::endl;
+                this->deleteTexture((*i)->objectId);
+            }
             continue;
         }
 
@@ -418,6 +505,24 @@ void GraphicsHandler::animationCheck()
         //For entity
         if ((*i)->animation == nullptr)
                 continue;
+        if (((Entity*)(*i))->isAttacking == false && ((Entity*)(*i))->curSt == 0)
+        {
+            if (((Entity*)(*i))->movingAnimation != nullptr)
+            {
+                if (((Entity*)(*i))->hasMoved && ((Entity*)(*i))->movingFlag == false)
+                {
+                    ((Entity*)(*i))->movingFlag = true;
+                    std::swap(((Entity*)(*i))->animation, ((Entity*)(*i))->movingAnimation);
+                }
+                if (((Entity*)(*i))->hasMoved == false && ((Entity*)(*i))->movingFlag == true)
+                {
+                    ((Entity*)(*i))->movingFlag = false;
+                    std::swap(((Entity*)(*i))->animation, ((Entity*)(*i))->movingAnimation);
+                    ((Entity*)(*i))->texture = *(((Entity*)(*i))->animation->textures.begin());
+                    ((Entity*)(*i))->textureName = *(((Entity*)(*i))->animation->textureNames.begin());
+                }
+            }
+        }
         if (((Entity*)(*i))->isAttacking == true &&
             ((Entity*)(*i))->attackAnimation != nullptr)
         {
@@ -430,6 +535,8 @@ void GraphicsHandler::animationCheck()
         {
             ((Entity*)(*i))->curSt = 0;
             std::swap(((Entity*)(*i))->animation, ((Entity*)(*i))->attackAnimation);
+            (*i)->texture = *((*i)->animation->textures.begin());
+            (*i)->textureName = *((*i)->animation->textureNames.begin());
         }
         if ((*i)->animation->curTime >= (FPS * ((*i)->animation->timeQueues[0])))
         {
@@ -534,6 +641,8 @@ void GraphicsHandler::enemyHostile()
                 makeNoise = true;
             }
 
+            bool flipFlag = false;
+
             if ((((Entity*)(*i))->team == MAIN || ((Entity*)(*i))->team == ALLY) 
             && (((Entity*)(*j))->team == HOSTILE))
             {
@@ -557,7 +666,9 @@ void GraphicsHandler::enemyHostile()
 
                 if(((Entity*)(*j))->noise != 0)
                 {
-                    this->moveTextureDelta((*j)->objectId, ((Entity*)(*j))->momentum.x, ((Entity*)(*j))->momentum.y);
+                    this->moveTextureDelta((*j)->objectId, ((Entity*)(*j))->momentum.x, 0);
+                    this->moveTextureDelta((*j)->objectId, 0, ((Entity*)(*j))->momentum.y);
+
                     ((Entity*)(*j))->noise += 1;
                 }
 
@@ -569,7 +680,16 @@ void GraphicsHandler::enemyHostile()
                     double l = sqrt(dx * dx + dy * dy);
                     dx = dx / l * ENEMY_SPEED;
                     dy = dy / l * ENEMY_SPEED;
-                    this->moveTextureDelta((*j)->objectId, dx, dy);
+
+                    if (ObjectHandler::measureDistance(
+                        ObjectHandler::getCenter((*i)),
+                        ObjectHandler::getCenter((*j))
+                    ) > 3)
+                    {
+                        this->moveTextureDelta((*j)->objectId, dx, 0);
+                        this->moveTextureDelta((*j)->objectId, 0, dy);
+                    }
+                    
                     if (ObjectHandler::collided(*i, *j) && makeNoise)
                     {
                         triggerAttack((*j)->objectId);
@@ -600,7 +720,8 @@ void GraphicsHandler::enemyHostile()
 
                 if(((Entity*)(*i))->noise != 0)
                 {
-                    this->moveTextureDelta((*i)->objectId, ((Entity*)(*i))->momentum.x, ((Entity*)(*i))->momentum.y);
+                    this->moveTextureDelta((*i)->objectId, ((Entity*)(*i))->momentum.x, 0);
+                    this->moveTextureDelta((*i)->objectId, 0, ((Entity*)(*i))->momentum.y);
                     ((Entity*)(*i))->noise += 1;
                 }
 
@@ -612,7 +733,16 @@ void GraphicsHandler::enemyHostile()
                     double l = sqrt(dx * dx + dy * dy);
                     dx = dx / l * ENEMY_SPEED;
                     dy = dy / l * ENEMY_SPEED;
-                    this->moveTextureDelta((*i)->objectId, dx, dy);
+                    
+                    if (ObjectHandler::measureDistance(
+                        ObjectHandler::getCenter((*i)),
+                        ObjectHandler::getCenter((*j))
+                    ) > 3)
+                    {
+                        this->moveTextureDelta((*i)->objectId, dx, 0);
+                        this->moveTextureDelta((*i)->objectId, 0, dy);
+                    }
+                    
                     if (ObjectHandler::collided(*i, *j) && makeNoise)
                     {
                         triggerAttack((*i)->objectId);
@@ -835,12 +965,17 @@ void GraphicsHandler::run()
                         // std::cout << "POSITION: " << i.coordinates.x << 
                         //     " " << i.coordinates.y << std::endl;
 
-                        DrawTexture(*(i->texture), i->coordinates.x, i->coordinates.y, Color{255,255,255,255});
+                        // DrawTexture(*(i->texture), i->coordinates.x, i->coordinates.y, Color{255,255,255,255});
+                        int flipped = 1;
+                        if (i->isFlipped)
+                            flipped *= -1;
+                        DrawTextureRec(*(i->texture), {0,0,(float)flipped*(i->texture)->width,(float)(i->texture)->height}, {i->coordinates.x, i->coordinates.y}, Color{255,255,255,255});
                     }
 
                 EndMode2D();
 
                 this->resetCollisions();
+                this->resetMovement();
 
                 DrawText(("HP: " + std::to_string(((Entity*)(this->objectMap[this->targetId]))->curHP)).c_str(), 10, 42, 32, RED);
 

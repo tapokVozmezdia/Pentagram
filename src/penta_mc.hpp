@@ -29,7 +29,7 @@
 #endif
 
 #ifndef CHARACTER_SPEED
-    #define CHARACTER_SPEED 12.f // DEFAULT = 9.f
+    #define CHARACTER_SPEED 9.f // DEFAULT = 9.f
 #endif
 
 #ifndef ENEMY_SPEED
@@ -66,7 +66,7 @@ namespace ContainerHandler
     template <class T1>
     void shiftListL(std::list<T1>* list)
     {
-        if (list->empty())
+        if (list->empty() || list == nullptr)
             return;
         auto tmp = *(list->begin());
         list->pop_front();
@@ -76,11 +76,25 @@ namespace ContainerHandler
     template <class T1>
     void shiftVectorL(std::vector<T1>* vector)
     {
-        if (vector->empty())
+        if (vector->empty() || vector == nullptr)
             return;
         auto tmp = *(vector->begin());
         vector->erase(vector->begin());
         vector->push_back(tmp);
+    }
+    template <class T1>
+    T1 getElementsSum(std::vector<T1>* vector)
+    {
+        // std::cout << "SUM: " << std::endl;
+        if (vector->empty()  || vector == nullptr)
+            return 0;
+        T1 sum = 0;
+        for (auto i = vector->begin(); i != vector->end(); ++i)
+        {
+            sum += (*i);
+        }
+        // std::cout << sum << std::endl;
+        return sum;
     }
 }
 
@@ -135,6 +149,13 @@ struct Animation
 };
 
 
+struct Hitbox
+{
+    int width;
+    int height;
+};
+
+
 // Basic Game Object type
 struct GameObject
 {
@@ -149,6 +170,8 @@ struct GameObject
     bool nLP = false; 
     bool isButton = false;
     bool mark = false;
+    bool isFlipped = false;
+    uint EXTRA = 0;
 };
 
 // Basic Entity type
@@ -159,14 +182,18 @@ struct Entity : GameObject
     int curHP;
     std::shared_ptr<Animation> attackAnimation = nullptr;
     std::shared_ptr<Animation> getHitAnimation = nullptr;
+    std::shared_ptr<Animation> movingAnimation = nullptr;
     bool isAttacking = false;
     uint curSt = 0;
     Vector2 * target = nullptr;
     Team team;
     bool isTrap = false;
+    bool hasMoved = false;
+    bool movingFlag = false;
     uint noise = 0;
     double noise_length = 0;
     Vector2 momentum;
+    Hitbox hitbox;
 };
 
 

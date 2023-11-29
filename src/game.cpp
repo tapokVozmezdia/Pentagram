@@ -11,14 +11,20 @@ void Game::makeCharacter(const int x, const int y)
     Animation anim;
 
     std::list<Texture2D*> txt;
-    txt.push_back(this->graphics.getTexture("robot.png"));
-    txt.push_back(this->graphics.getTexture("robot2.png"));
     std::list<std::string> nTxt;
-    nTxt.push_back("robot.png");
-    nTxt.push_back("robot2.png");
     std::vector<double> tQ;
+
     tQ.push_back(1.2);
-    tQ.push_back(1.2);
+
+    for(int i = 1; i <= 6; ++i)
+    {
+        txt.push_back(this->graphics.getTexture("rob" + std::to_string(i) + ".png"));
+        nTxt.push_back("rob" + std::to_string(i) + ".png");
+        if (i != 1)
+        {
+            tQ.push_back(0.05);
+        }
+    }
 
     anim.textureNames = nTxt;
     anim.textures = txt;
@@ -33,16 +39,53 @@ void Game::makeCharacter(const int x, const int y)
     std::vector<double> tQ1;
     for(int i = 1; i <= 5; ++i) 
     {
-        txt1.push_back(this->graphics.getTexture("rA" + std::to_string(i) + ".png"));
-        nTxt1.push_back("rA" + std::to_string(i) + ".png");
-        tQ1.push_back(0.05);
+        txt1.push_back(this->graphics.getTexture("rob_a" + std::to_string(i) + ".png"));
+        nTxt1.push_back("rob_a" + std::to_string(i) + ".png");
     }
+
+    tQ1.push_back(0.05);
+    tQ1.push_back(0.03);
+    tQ1.push_back(0.03);
+    tQ1.push_back(0.03);
+    tQ1.push_back(0.07);
 
     at.textureNames = nTxt1;
     at.textures = txt1;
     at.timeQueues = tQ1;
 
     this->graphics.animateEntity(mc_id, at, at);
+
+
+    Animation run;
+
+    std::list<Texture2D*> txt2;
+    std::list<std::string> nTxt2;
+    std::vector<double> tQ2;
+
+    for(int i = 1; i <= 6; ++i) 
+    {
+        txt2.push_back(this->graphics.getTexture("rob_r" + std::to_string(i) + ".png"));
+        nTxt2.push_back("rob_r" + std::to_string(i) + ".png");
+    }
+
+    txt2.push_back(this->graphics.getTexture("rob_r3.png"));
+    nTxt2.push_back("rob_r3.png");
+    
+    tQ2.push_back(0.05);
+    tQ2.push_back(0.03);
+    tQ2.push_back(0.03);
+    tQ2.push_back(0.05);
+    tQ2.push_back(0.03);
+    tQ2.push_back(0.03);
+    tQ2.push_back(0.05);
+
+    run.textureNames = nTxt2;
+    run.textures = txt2;
+    run.timeQueues = tQ2;
+
+
+    this->graphics.animateEntityMoving(mc_id, run);
+    this->graphics.setHitbox(mc_id, {44, 96});
 }
 
 
@@ -86,14 +129,16 @@ void Game::makeEnemy(int x, int y)
     txt1.push_back(this->graphics.getTexture("dummy_strike.png"));
     nTxt1.push_back("dummy_strike.png");
     nTxt1.push_back("dummy_strike.png");
-    tQ1.push_back(0.2);
-    tQ1.push_back(0.2);
+    tQ1.push_back(0.4);
+    tQ1.push_back(0.4);
 
     at.textureNames = nTxt1;
     at.textures = txt1;
     at.timeQueues = tQ1;
 
     this->graphics.animateEntity(enemy_id, at, at);
+
+    this->graphics.setHitbox(enemy_id,{38,60});
 
 }
 
@@ -129,7 +174,7 @@ void Game::makeTrap(int x, int y)
     x = x * 200;
     y = y * 200;
 
-    llint enemy_id = (this->graphics.spawnEntity("trap1.png", x, y + 75, 50, 100, Team::HOSTILE));
+    llint enemy_id = (this->graphics.spawnEntity("trap1.png", x, y + 75, 10, 100, Team::HOSTILE));
     this->objectNameMap["trap" + std::to_string(enemy_id)] = enemy_id;
     
     this->graphics.trapFromEntity(enemy_id);
@@ -167,10 +212,16 @@ void Game::makeTrap(int x, int y)
     std::vector<double> tQ1;
     txt1.push_back(this->graphics.getTexture("trap_a1.png"));
     txt1.push_back(this->graphics.getTexture("trap_a2.png"));
+    txt1.push_back(this->graphics.getTexture("trap_a1.png"));
+    txt1.push_back(this->graphics.getTexture("trap_a2.png"));
     nTxt1.push_back("trap_a1.png");
     nTxt1.push_back("trap_a2.png");
-    tQ1.push_back(0.1);
-    tQ1.push_back(0.25);
+    nTxt1.push_back("trap_a1.png");
+    nTxt1.push_back("trap_a2.png");
+    tQ1.push_back(0.05);
+    tQ1.push_back(0.03);
+    tQ1.push_back(0.05);
+    tQ1.push_back(0.04);
 
     at.textureNames = nTxt1;
     at.textures = txt1;
@@ -222,8 +273,8 @@ void Game::makeHeal(int x, int y)
 
 void Game::makeWall(const int x, const int y)
 {
-    llint wall_id = (this->graphics.spawnTexture("wall.png", x, y));
-    this->objectNameMap["trap" + std::to_string(wall_id)] = wall_id;
+    llint wall_id = (this->graphics.spawnTexture("nwall.png", x, y));
+    this->objectNameMap["wall" + std::to_string(wall_id)] = wall_id;
 
     this->graphics.wallFromObject(wall_id);
 }
@@ -231,58 +282,62 @@ void Game::makeWall(const int x, const int y)
 
 void Game::makeFloor(const int x, const int y)
 {
-    int rand = GetRandomValue(1, 4);
-    if (rand != 4)
-    {
-        llint floor_id = (this->graphics.spawnTexture(("floor" + std::to_string(rand) + ".png"), x, y));
-        this->objectNameMap["trap" + std::to_string(floor_id)] = floor_id;
-        return;
-    }
-
-    rand = GetRandomValue(1, 4);
-    llint floor_id = (this->graphics.spawnTexture(("floor41.png"), x, y));
-    this->objectNameMap["trap" + std::to_string(floor_id)] = floor_id;
-
-    Animation anim;
-
-    std::list<Texture2D*> txt;
-    std::list<std::string> nTxt;
-    std::vector<double> tQ;
-
-    // for (int i = 1; i <= 4; ++i)
+    //int rand = GetRandomValue(1, 4);
+    // if (rand != 4)
     // {
-    //     txt.push_back(this->graphics.getTexture("floor4" + std::to_string(i) + ".png"));
-    //     nTxt.push_back("floor4" + std::to_string(i) + ".png");
+    //     llint floor_id = (this->graphics.spawnTexture(("floor" + std::to_string(rand) + ".png"), x, y));
+    //     this->objectNameMap["floor" + std::to_string(floor_id)] = floor_id;
+    //     return;
     // }
 
-    txt.push_back(this->graphics.getTexture("floor41.png"));
-    nTxt.push_back("floor41.png");
+    int rand = GetRandomValue(1, 11);
+    llint floor_id;
+    if (rand != 3)
+        floor_id = (this->graphics.spawnTexture(("pfloor.png"), x, y));
+    else
+        floor_id = (this->graphics.spawnTexture(("nnfloor.png"), x, y));
+    this->objectNameMap["floor" + std::to_string(floor_id)] = floor_id;
 
-    for (int i = 0; i < 3; ++i)
-    {
-        txt.push_back(this->graphics.getTexture("floor42.png"));
-        nTxt.push_back("floor42.png");
-        txt.push_back(this->graphics.getTexture("floor41.png"));
-        nTxt.push_back("floor41.png");
-    }
+    // Animation anim;
 
-    txt.push_back(this->graphics.getTexture("floor43.png"));
-    nTxt.push_back("floor43.png");
+    // std::list<Texture2D*> txt;
+    // std::list<std::string> nTxt;
+    // std::vector<double> tQ;
 
-    txt.push_back(this->graphics.getTexture("floor44.png"));
-    nTxt.push_back("floor44.png");
+    // // for (int i = 1; i <= 4; ++i)
+    // // {
+    // //     txt.push_back(this->graphics.getTexture("floor4" + std::to_string(i) + ".png"));
+    // //     nTxt.push_back("floor4" + std::to_string(i) + ".png");
+    // // }
 
-    tQ.push_back(1.8);
-    for (int i = 0; i < 6; ++i) 
-        tQ.push_back(0.1);
-    tQ.push_back(0.2);
-    tQ.push_back(1.4);
+    // txt.push_back(this->graphics.getTexture("floor41.png"));
+    // nTxt.push_back("floor41.png");
 
-    anim.textureNames = nTxt;
-    anim.textures = txt;
-    anim.timeQueues = tQ;
+    // for (int i = 0; i < 3; ++i)
+    // {
+    //     txt.push_back(this->graphics.getTexture("floor42.png"));
+    //     nTxt.push_back("floor42.png");
+    //     txt.push_back(this->graphics.getTexture("floor41.png"));
+    //     nTxt.push_back("floor41.png");
+    // }
 
-    this->graphics.animateTexture(floor_id, anim);
+    // txt.push_back(this->graphics.getTexture("floor43.png"));
+    // nTxt.push_back("floor43.png");
+
+    // txt.push_back(this->graphics.getTexture("floor44.png"));
+    // nTxt.push_back("floor44.png");
+
+    // tQ.push_back(1.8);
+    // for (int i = 0; i < 6; ++i) 
+    //     tQ.push_back(0.1);
+    // tQ.push_back(0.2);
+    // tQ.push_back(1.4);
+
+    // anim.textureNames = nTxt;
+    // anim.textures = txt;
+    // anim.timeQueues = tQ;
+
+    // this->graphics.animateTexture(floor_id, anim);
 }
 
 
@@ -507,6 +562,7 @@ void Game::run()
         {
             Controls::moveWASD(this->objectNameMap["MC"], &(this->graphics));
             Controls::attackLMC(this->objectNameMap["MC"], &(this->graphics));
+            Controls::attackRMC(this->objectNameMap["MC"], &(this->graphics));
 
             for (int i = 0; i < this->starNum; ++i)
             {
@@ -546,15 +602,21 @@ void Game::loadTextures()
     this->graphics.loadTextureFromImage("trap_a1.png");
     this->graphics.loadTextureFromImage("trap_a2.png");
 
-    this->graphics.loadTextureFromImage("wall.png");
+    this->graphics.loadTextureFromImage("nwall.png");
 
-    this->graphics.loadTextureFromImage("floor1.png");
-    this->graphics.loadTextureFromImage("floor2.png");
-    this->graphics.loadTextureFromImage("floor3.png");
-    this->graphics.loadTextureFromImage("floor41.png");
-    this->graphics.loadTextureFromImage("floor42.png");
-    this->graphics.loadTextureFromImage("floor43.png");
-    this->graphics.loadTextureFromImage("floor44.png");
+
+    this->graphics.loadTextureFromImage("nfloor.png");
+    this->graphics.loadTextureFromImage("nfloor1.png");
+    this->graphics.loadTextureFromImage("nnfloor.png");
+    this->graphics.loadTextureFromImage("nnfloor1.png");
+    this->graphics.loadTextureFromImage("pfloor.png");
+    // this->graphics.loadTextureFromImage("floor1.png");
+    // this->graphics.loadTextureFromImage("floor2.png");
+    // this->graphics.loadTextureFromImage("floor3.png");
+    // this->graphics.loadTextureFromImage("floor41.png");
+    // this->graphics.loadTextureFromImage("floor42.png");
+    // this->graphics.loadTextureFromImage("floor43.png");
+    // this->graphics.loadTextureFromImage("floor44.png");
 
     this->graphics.loadTextureFromImage("roboss1.png");
 
@@ -568,7 +630,14 @@ void Game::loadTextures()
     }
 
     for(int i = 1; i <= 5; ++i) 
-        this->graphics.loadTextureFromImage("rA" + std::to_string(i) + ".png");
+    {
+        this->graphics.loadTextureFromImage("rob_a" + std::to_string(i) + ".png");
+        this->graphics.loadTextureFromImage("rob" + std::to_string(i) + ".png");
+        this->graphics.loadTextureFromImage("rob_r" + std::to_string(i) + ".png");
+
+    }
+    this->graphics.loadTextureFromImage("rob6.png");
+    this->graphics.loadTextureFromImage("rob_r6.png");
 }
 
 void Game::actOne()
