@@ -183,6 +183,7 @@ void GraphicsHandler::animateTexture(const llint t_id, const Animation& anim)
     // std::cout << "!!HERE:" << &(anim) << std::endl;
     this->objectMap[t_id]->animation = std::make_shared<Animation>(anim);
     this->objectMap[t_id]->texture = *(this->objectMap[t_id]->animation->textures.begin());
+    this->objectMap[t_id]->animation->firstTexture = this->objectMap[t_id]->texture;
     this->objectMap[t_id]->textureName = *(this->objectMap[t_id]->animation->textureNames.begin());
 }
 
@@ -535,8 +536,26 @@ void GraphicsHandler::animationCheck()
         {
             ((Entity*)(*i))->curSt = 0;
             std::swap(((Entity*)(*i))->animation, ((Entity*)(*i))->attackAnimation);
+            
             (*i)->texture = *((*i)->animation->textures.begin());
             (*i)->textureName = *((*i)->animation->textureNames.begin());
+
+            if (((Entity*)(*i))->hasMoved == false && ((Entity*)(*i))->movingFlag == false)
+            {
+
+                while(*(((Entity*)(*i))->animation->textures.begin()) != 
+                ((Entity*)(*i))->animation->firstTexture
+                )
+                {
+                    //std::cout << ((Entity*)(*i))->textureName << std::endl;
+                    ContainerHandler::shiftListL(&((*i)->animation->textures));
+                    ContainerHandler::shiftListL(&((*i)->animation->textureNames));
+                    ContainerHandler::shiftVectorL(&((*i)->animation->timeQueues));
+                }
+
+                (*i)->texture = *((*i)->animation->textures.begin());
+                (*i)->textureName = *((*i)->animation->textureNames.begin());
+            }
         }
         if ((*i)->animation->curTime >= (FPS * ((*i)->animation->timeQueues[0])))
         {

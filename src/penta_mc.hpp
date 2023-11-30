@@ -29,7 +29,7 @@
 #endif
 
 #ifndef CHARACTER_SPEED
-    #define CHARACTER_SPEED 9.f // DEFAULT = 9.f
+    #define CHARACTER_SPEED 10.f // DEFAULT = 9.f
 #endif
 
 #ifndef ENEMY_SPEED
@@ -81,6 +81,25 @@ namespace ContainerHandler
         auto tmp = *(vector->begin());
         vector->erase(vector->begin());
         vector->push_back(tmp);
+    }
+    template <class T1>
+    void shiftListR(std::list<T1>* list)
+    {
+        if (list->empty() || list == nullptr)
+            return;
+        auto tmp = *(list->end());
+        list->pop_back();
+        list->push_front(tmp);
+    }
+
+    template <class T1>
+    void shiftVectorR(std::vector<T1>* vector)
+    {
+        if (vector->empty() || vector == nullptr)
+            return;
+        auto tmp = *(vector->end());
+        vector->erase(vector->end());
+        vector->push_front(tmp);
     }
     template <class T1>
     T1 getElementsSum(std::vector<T1>* vector)
@@ -145,6 +164,7 @@ struct Animation
     std::list<Texture2D*>  textures;
     std::list<std::string> textureNames;
     std::vector<double> timeQueues;
+    Texture2D* firstTexture = nullptr;
     uint curTime = 0;
 };
 

@@ -14,16 +14,27 @@ void Game::makeCharacter(const int x, const int y)
     std::list<std::string> nTxt;
     std::vector<double> tQ;
 
-    tQ.push_back(1.2);
+    tQ.push_back(3);
+    txt.push_back(this->graphics.getTexture("rob_r2.png"));
+    nTxt.push_back("rob_r2.png");
 
-    for(int i = 1; i <= 6; ++i)
+
+    txt.push_back(this->graphics.getTexture("rob1.png"));
+    nTxt.push_back("rob1.png");
+    tQ.push_back(1);
+
+    for (int j = 0; j < 100; ++j)
     {
-        txt.push_back(this->graphics.getTexture("rob" + std::to_string(i) + ".png"));
-        nTxt.push_back("rob" + std::to_string(i) + ".png");
-        if (i != 1)
+        for(int i = 2; i <= 6; ++i)
         {
+            txt.push_back(this->graphics.getTexture("rob" + std::to_string(i) + ".png"));
+            nTxt.push_back("rob" + std::to_string(i) + ".png");
             tQ.push_back(0.05);
         }
+
+        txt.push_back(this->graphics.getTexture("rob1.png"));
+        nTxt.push_back("rob1.png");
+        tQ.push_back(0.5);
     }
 
     anim.textureNames = nTxt;
@@ -62,22 +73,26 @@ void Game::makeCharacter(const int x, const int y)
     std::list<std::string> nTxt2;
     std::vector<double> tQ2;
 
-    for(int i = 1; i <= 6; ++i) 
+    for(int i = 1; i <= 8; ++i) 
     {
         txt2.push_back(this->graphics.getTexture("rob_r" + std::to_string(i) + ".png"));
         nTxt2.push_back("rob_r" + std::to_string(i) + ".png");
+        tQ2.push_back(0.05);
     }
 
-    txt2.push_back(this->graphics.getTexture("rob_r3.png"));
-    nTxt2.push_back("rob_r3.png");
+    //txt2.push_back(this->graphics.getTexture("rob_r3.png"));
+    //nTxt2.push_back("rob_r3.png");
     
-    tQ2.push_back(0.05);
-    tQ2.push_back(0.03);
-    tQ2.push_back(0.03);
-    tQ2.push_back(0.05);
-    tQ2.push_back(0.03);
-    tQ2.push_back(0.03);
-    tQ2.push_back(0.05);
+
+    //double mod = 4;
+
+    // tQ2.push_back(0.05 * mod);
+    // //tQ2.push_back(0.05 * mod);
+    // tQ2.push_back(0.05 * mod);
+    // tQ2.push_back(0.04 * mod);
+    // tQ2.push_back(0.05 * mod);
+    //tQ2.push_back(0.08);
+    //tQ2.push_back(0.05);
 
     run.textureNames = nTxt2;
     run.textures = txt2;
@@ -638,6 +653,8 @@ void Game::loadTextures()
     }
     this->graphics.loadTextureFromImage("rob6.png");
     this->graphics.loadTextureFromImage("rob_r6.png");
+    this->graphics.loadTextureFromImage("rob_r7.png");
+    this->graphics.loadTextureFromImage("rob_r8.png");
 }
 
 void Game::actOne()
