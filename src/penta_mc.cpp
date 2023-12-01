@@ -67,7 +67,7 @@ double ObjectHandler::measureDistance(const Vector2& u, const Vector2& v)
     return sqrt((v.x - u.x) * (v.x - u.x) + (v.y - u.y) * (v.y - u.y));
 }
 
-//V - target, U - source
+//U - source, V - target
 const Vector2 ObjectHandler::getVectorDiff(const Vector2& u, const Vector2& v)
 {
     return {v.x - u.x, v.y - u.y};

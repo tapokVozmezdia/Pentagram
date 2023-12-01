@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "penta_mc.hpp"
+#include "audioHandler.hpp"
 
 class GraphicsHandler
 {
@@ -10,6 +10,8 @@ class GraphicsHandler
         GraphicsHandler();
 
         ~GraphicsHandler();
+
+        void linkAudio(AudioHandler* audio_ptr);
 
         // Loads a texture from a specific folder by image name
         void loadTextureFromImage(const std::string& imgName); // Custom method, don't raylib one!!!
@@ -93,6 +95,7 @@ class GraphicsHandler
 
 
     private:
+
         void run();
 
         // Sets collision for all objects in objectList
@@ -129,4 +132,6 @@ class GraphicsHandler
         std::unordered_map<std::string, Texture2D> textureMap;
 
         bool hostilityFlag = true;
+
+        AudioHandler* audio = nullptr;
 };

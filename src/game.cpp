@@ -1,5 +1,91 @@
 #include "game.hpp"
 
+
+Game::Game(uint fps, uint screenWidth,  uint screenHeight)
+{
+    if (fps <= 0 || screenWidth <= 0 || screenHeight <= 0)
+    {
+        throw std::underflow_error("invalid arguments for constructor of Game class");
+    }
+
+    this->menu.linkMenu(&(this->graphics));
+
+    this->graphics.linkAudio(&(this->audio));
+
+    InitWindow(screenWidth, screenHeight, "Project Pentagram");
+    InitAudioDevice();
+    SetTargetFPS(fps);
+}
+
+Game::Game(uint screenWidth,  uint screenHeight)
+{
+    if (screenWidth <= 0 || screenHeight <= 0)
+    {
+        throw std::underflow_error("invalid arguments for constructor of Game class");
+    }
+
+    this->menu.linkMenu(&(this->graphics));
+
+    this->graphics.linkAudio(&(this->audio));
+
+    InitWindow(screenWidth, screenHeight, "Project Pentagram");
+    InitAudioDevice();
+    SetTargetFPS(60);
+}
+
+Game::~Game()
+{
+    CloseAudioDevice();
+    CloseWindow();
+}
+
+void Game::run()
+{
+    this->loadTextures();
+    this->loadSounds();
+
+    while(!WindowShouldClose())
+    {
+        if (this->menu.actOneInitiated(&(this->graphics)))
+        {
+            // std::cout << "MOGUS MOGUS MOGUS" << std::endl;
+            this->actOne();
+        }
+
+        if (!(this->menu.isOn()) && !(this->menu.gameEnded()))
+        {
+            Controls::moveWASD(this->objectNameMap["MC"], &(this->graphics));
+            Controls::attackLMC(this->objectNameMap["MC"], &(this->graphics));
+            Controls::attackRMC(this->objectNameMap["MC"], &(this->graphics));
+
+            for (int i = 0; i < this->starNum; ++i)
+            {
+                Controls::vibrate(this->objectNameMap["star" + std::to_string(i)], 
+                    &(this->graphics), 1);
+
+            }
+        }
+
+        if (this->menu.gameEnded() && this->menu.menuInGameFlag())
+        {
+            // std::cout << "GOT HERE" << std::endl;
+            this->audio.stopAmbient();
+            this->menu.defaultAllButtons();
+            this->objectNameMap.clear();
+            starNum = 0;
+        }
+
+        this->graphics.perform();
+
+        this->audio.perform();
+
+    }
+}
+
+
+
+
+
 void Game::makeCharacter(const int x, const int y)
 {
     llint mc_id = (this->graphics.spawnEntity("robot.png", x - 100, y - 100, 12, 1000, Team::MAIN));
@@ -64,6 +150,13 @@ void Game::makeCharacter(const int x, const int y)
     at.textures = txt1;
     at.timeQueues = tQ1;
 
+    at.soundNames.push_back("swordslice11.mp3");
+    at.soundNames.push_back("swordslice12.mp3");
+    at.soundNames.push_back("swordslice13.mp3");
+    at.soundNames.push_back("swordslice14.mp3");
+
+    at.extraSound.push_back("sword_hit.mp3");
+
     this->graphics.animateEntity(mc_id, at, at);
 
 
@@ -97,6 +190,7 @@ void Game::makeCharacter(const int x, const int y)
     run.textureNames = nTxt2;
     run.textures = txt2;
     run.timeQueues = tQ2;
+    run.soundNames.push_back("rob_run.mp3");
 
 
     this->graphics.animateEntityMoving(mc_id, run);
@@ -526,79 +620,6 @@ void Game::createHallway(int x, int y, const SingularDirection dir, const uint w
     }
 }
 
-
-Game::Game(uint fps, uint screenWidth,  uint screenHeight)
-{
-    if (fps <= 0 || screenWidth <= 0 || screenHeight <= 0)
-    {
-        throw std::underflow_error("invalid arguments for constructor of Game class");
-    }
-
-    this->menu.linkMenu(&(this->graphics));
-
-    InitWindow(screenWidth, screenHeight, "Project Pentagram");
-    InitAudioDevice();
-    SetTargetFPS(fps);
-}
-
-Game::Game(uint screenWidth,  uint screenHeight)
-{
-    if (screenWidth <= 0 || screenHeight <= 0)
-    {
-        throw std::underflow_error("invalid arguments for constructor of Game class");
-    }
-
-    this->menu.linkMenu(&(this->graphics));
-
-    InitWindow(screenWidth, screenHeight, "Project Pentagram");
-    InitAudioDevice();
-    SetTargetFPS(60);
-}
-
-Game::~Game()
-{
-    CloseAudioDevice();
-    CloseWindow();
-}
-
-void Game::run()
-{
-    this->loadTextures();
-
-    while(!WindowShouldClose())
-    {
-        if (this->menu.actOneInitiated(&(this->graphics)))
-        {
-            // std::cout << "MOGUS MOGUS MOGUS" << std::endl;
-            this->actOne();
-        }
-
-        if (!(this->menu.isOn()) && !(this->menu.gameEnded()))
-        {
-            Controls::moveWASD(this->objectNameMap["MC"], &(this->graphics));
-            Controls::attackLMC(this->objectNameMap["MC"], &(this->graphics));
-            Controls::attackRMC(this->objectNameMap["MC"], &(this->graphics));
-
-            for (int i = 0; i < this->starNum; ++i)
-            {
-                Controls::vibrate(this->objectNameMap["star" + std::to_string(i)], 
-                    &(this->graphics), 1);
-
-            }
-        }
-
-        if (this->menu.gameEnded() && this->menu.menuInGameFlag())
-        {
-            // std::cout << "GOT HERE" << std::endl;
-            this->menu.defaultAllButtons();
-            this->objectNameMap.clear();
-            starNum = 0;
-        }
-
-        this->graphics.perform();
-    }
-}
-
 void Game::loadTextures()
 {
     this->graphics.loadTextureFromImage("robot.png");
@@ -656,6 +677,21 @@ void Game::loadTextures()
     this->graphics.loadTextureFromImage("rob_r7.png");
     this->graphics.loadTextureFromImage("rob_r8.png");
 }
+
+
+void Game::loadSounds()
+{
+    this->audio.loadSoundByName("ost1.mp3");
+    this->audio.loadSoundByName("swordslice11.mp3");
+    this->audio.loadSoundByName("swordslice12.mp3");
+    this->audio.loadSoundByName("swordslice13.mp3");
+    this->audio.loadSoundByName("swordslice14.mp3");
+
+    this->audio.loadSoundByName("rob_run.mp3");
+
+    this->audio.loadSoundByName("sword_hit.mp3");
+}
+
 
 void Game::actOne()
 {
@@ -829,6 +865,10 @@ void Game::actOne()
     this->makeEnemy(44, 8);
     this->makeEnemy(44, 9);
     this->makeEnemy(44, 9);
+
+
+    //this->audio.playOst("sclice.mp3");
+    this->audio.playAmbient("ost1.mp3", 0.05);
 
     // this->graphics.fireProjectile();
 

@@ -14,7 +14,8 @@ class Game
 
     private:
 
-        GraphicsHandler graphics;    
+        GraphicsHandler graphics; 
+        AudioHandler audio;   
 
         Menu menu;
 
@@ -29,6 +30,8 @@ class Game
 
 
         void loadTextures();
+
+        void loadSounds();
 
 
         void actOne();

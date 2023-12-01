@@ -164,6 +164,8 @@ struct Animation
     std::list<Texture2D*>  textures;
     std::list<std::string> textureNames;
     std::vector<double> timeQueues;
+    std::list<std::string> soundNames;
+    std::list<std::string> extraSound;
     Texture2D* firstTexture = nullptr;
     uint curTime = 0;
 };
@@ -214,7 +216,25 @@ struct Entity : GameObject
     double noise_length = 0;
     Vector2 momentum;
     Hitbox hitbox;
+    bool didDamage = false;
 };
+// TAK PLOHO
+
+
+// NADO TAK
+// struct info
+// {
+        // add vars
+// };
+
+
+// struct obj
+// {
+//     // base vars
+//    
+//     std::unique_ptr<info> inf = nullptr;
+// };
+
 
 
 struct Projectile : GameObject

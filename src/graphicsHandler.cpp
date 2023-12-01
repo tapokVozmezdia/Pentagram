@@ -25,6 +25,19 @@ GraphicsHandler::~GraphicsHandler()
     this->textureMap.clear();
 }
 
+
+
+void GraphicsHandler::linkAudio(AudioHandler* audio_ptr)
+{
+    if (audio_ptr == nullptr)
+        throw std::logic_error("Trying to link audio via nullptr");
+
+    this->audio = audio_ptr;
+    this->audio->connectToGraphics(&(this->objectList), &(this->objectMap));
+}
+
+
+
 void GraphicsHandler::loadTextureFromImage(const std::string& imgName)
 {
     std::string tmp = "..\\assets\\images\\" + imgName;
@@ -280,7 +293,8 @@ void GraphicsHandler::moveTextureDelta(const llint t_id, float dx, float dy)
         ||
         (dx > 0 && (((Entity*)(this->objectMap[t_id]))->isFlipped)))
         {
-            this->flipTexture(t_id);
+            //if (t_id != this->targetId)
+                this->flipTexture(t_id);
         }
         ((Entity*)(this->objectMap[t_id]))->hasMoved = true;
     }
@@ -429,6 +443,7 @@ void GraphicsHandler::resetMovement()
         }
     }
 }
+
 
 void GraphicsHandler::animationCheck()
 {
@@ -604,9 +619,24 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
         {
             ((Entity*)(j))->curHP -= ((Entity*)(i))->baseDamage;
             if (((Entity*)(j))->team != MAIN)
+
+            ((Entity*)(i))->didDamage = true;
+
             std::cout << "OBJECT " << ((Entity*)(j))->objectId <<
                 " IS AT " << ((Entity*)(j))->curHP << 
                 " HEALTH POINTS" << std::endl;
+
+
+            if (j->objectId != this->targetId)
+            {
+                Vector2 dif = ObjectHandler::getVectorWithLength(
+                    ObjectHandler::getVectorDiff(i->coordinates, j->coordinates), 35
+                );
+
+                moveTextureDelta(j->objectId, dif);
+            }
+
+
             if (((Entity*)(i))->baseDamage <= 0)
             {
                 this->deleteTexture(((Entity*)(i))->objectId);
@@ -619,10 +649,23 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
             )
         {
             ((Entity*)(i))->curHP -= ((Entity*)(j))->baseDamage;
+
+            ((Entity*)(j))->didDamage = true;
+
             if (((Entity*)(i))->team != MAIN)
             std::cout << "OBJECT " << ((Entity*)(i))->objectId <<
                 " IS AT " << ((Entity*)(i))->curHP << 
                 " HEALTH POINTS" << std::endl;
+
+            if (i->objectId != this->targetId)
+            {
+                Vector2 dif = ObjectHandler::getVectorWithLength(
+                    ObjectHandler::getVectorDiff(j->coordinates, i->coordinates), 35
+                );
+
+                moveTextureDelta(i->objectId, dif);
+            }
+
             if (((Entity*)(j))->baseDamage <= 0)
             {
                 this->deleteTexture(((Entity*)(j))->objectId);
@@ -703,7 +746,7 @@ void GraphicsHandler::enemyHostile()
                     if (ObjectHandler::measureDistance(
                         ObjectHandler::getCenter((*i)),
                         ObjectHandler::getCenter((*j))
-                    ) > 3)
+                    ) > 40 && (makeNoise == false))
                     {
                         this->moveTextureDelta((*j)->objectId, dx, 0);
                         this->moveTextureDelta((*j)->objectId, 0, dy);
@@ -756,7 +799,7 @@ void GraphicsHandler::enemyHostile()
                     if (ObjectHandler::measureDistance(
                         ObjectHandler::getCenter((*i)),
                         ObjectHandler::getCenter((*j))
-                    ) > 3)
+                    ) > 40 && (makeNoise == false))
                     {
                         this->moveTextureDelta((*i)->objectId, dx, 0);
                         this->moveTextureDelta((*i)->objectId, 0, dy);
@@ -1022,6 +1065,7 @@ void GraphicsHandler::run()
         }
 
         DrawText("PROJECT PENTAGRAM", 10, 10, 32, DARKPURPLE);
+        //DrawFPS(10, 200);
 
 
     EndDrawing();
