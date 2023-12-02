@@ -57,6 +57,12 @@ void Game::run()
             this->actOne();
         }
 
+        if (this->menu.actTwoInitiated(&(this->graphics)))
+        {
+            // std::cout << "MOGUS MOGUS MOGUS" << std::endl;
+            this->actTwo();
+        }
+
         if (!(this->menu.isOn()) && !(this->menu.gameEnded()))
         {
             Controls::moveWASD(this->objectNameMap["MC"], &(this->graphics));
@@ -279,31 +285,102 @@ void Game::makeEnemy(int x, int y)
 
 }
 
-void Game::spawnRoboss(int x, int y)
+void Game::spawnCrawler(int x, int y)
 {
     x = x * 200;
     y = y * 200;
 
-    llint enemy_id = (this->graphics.spawnEntity("roboss1.png", x, y, 100, 500, Team::HOSTILE));
+    llint enemy_id = (this->graphics.spawnEntity("crawler1.png", x, y, 100, 500, Team::HOSTILE));
     this->objectNameMap["enemy" + std::to_string(enemy_id)] = enemy_id;
 
+
     Animation anim;
+
+    anim.textures.push_back(this->graphics.getTexture("crawler1.png"));
+    anim.textureNames.push_back("crawler1.png");
+    anim.timeQueues.push_back(4);
+
+    for (int i = 1; i <= 6; ++i)
+    {
+        anim.textures.push_back(this->graphics.getTexture("crawler" + 
+        std::to_string(i) + ".png"));
+        anim.textureNames.push_back("crawler" + 
+        std::to_string(i) + ".png");
+        anim.timeQueues.push_back(0.08);
+    }
+    for (int i = 0; i < 10; ++i)
+    {
+        anim.textures.push_back(this->graphics.getTexture("crawler5.png"));
+        anim.textures.push_back(this->graphics.getTexture("crawler6.png"));
+        anim.textureNames.push_back("crawler5.png");
+        anim.textureNames.push_back("crawler6.png");
+        anim.timeQueues.push_back(0.03);
+        anim.timeQueues.push_back(0.03);
+    }
+    for (int i = 6; i >= 1; i--)
+    {
+        anim.textures.push_back(this->graphics.getTexture("crawler" + 
+        std::to_string(i) + ".png"));
+        anim.textureNames.push_back("crawler" + 
+        std::to_string(i) + ".png");
+        anim.timeQueues.push_back(0.08);
+    }
+
+
+    this->graphics.animateTexture(enemy_id, anim);
+
+
+    Animation at;
 
     std::list<Texture2D*> txt;
     std::list<std::string> nTxt;
     std::vector<double> tQ;
 
-    txt.push_back(this->graphics.getTexture("roboss1.png"));
-    nTxt.push_back("roboss1.png");
+    txt.push_back(this->graphics.getTexture("crawler1.png"));
+    nTxt.push_back("crawler1.png");
     tQ.push_back(1);
 
-    anim.textureNames = nTxt;
-    anim.textures = txt;
-    anim.timeQueues = tQ;
+    at.textureNames = nTxt;
+    at.textures = txt;
+    at.timeQueues = tQ;
 
-    this->graphics.animateTexture(enemy_id, anim);
+    this->graphics.animateEntity(enemy_id, at, at);
 
-    this->graphics.animateEntity(enemy_id, anim, anim);
+    Animation run;
+
+    for(int i = 1; i <= 3; ++i)
+    {
+        run.textures.push_back(this->graphics.getTexture(
+            "crawler_walk" + std::to_string(i) + ".png"
+        ));
+        run.textureNames.push_back("crawler_walk" + std::to_string(i) + ".png");
+        run.timeQueues.push_back(0.05);
+    }
+
+    run.textures.push_back(this->graphics.getTexture(
+        "crawler1.png"
+    ));
+    run.textureNames.push_back("crawler1.png");
+    run.timeQueues.push_back(0.05);
+
+    for(int i = 4; i <= 6; ++i)
+    {
+        run.textures.push_back(this->graphics.getTexture(
+            "crawler_walk" + std::to_string(i) + ".png"
+        ));
+        run.textureNames.push_back("crawler_walk" + std::to_string(i) + ".png");
+        run.timeQueues.push_back(0.05);
+    }
+
+    run.textures.push_back(this->graphics.getTexture(
+        "crawler1.png"
+    ));
+    run.textureNames.push_back("crawler1.png");
+    run.timeQueues.push_back(0.05);
+
+    this->graphics.animateEntityMoving(enemy_id, run);
+
+    this->graphics.setHitbox(enemy_id, {125, 125});
 }
 
 void Game::makeTrap(int x, int y)
@@ -704,8 +781,11 @@ void Game::loadTextures()
         this->graphics.loadTextureFromImage("rob_a" + std::to_string(i) + ".png");
         this->graphics.loadTextureFromImage("rob" + std::to_string(i) + ".png");
         this->graphics.loadTextureFromImage("rob_r" + std::to_string(i) + ".png");
-
+        this->graphics.loadTextureFromImage("crawler" + std::to_string(i) + ".png");
+        this->graphics.loadTextureFromImage("crawler_walk" + std::to_string(i) + ".png");
     }
+    this->graphics.loadTextureFromImage("crawler_walk6.png");
+    this->graphics.loadTextureFromImage("crawler6.png");
     this->graphics.loadTextureFromImage("rob6.png");
     this->graphics.loadTextureFromImage("rob_r6.png");
     this->graphics.loadTextureFromImage("rob_r7.png");
@@ -860,7 +940,7 @@ void Game::actOne()
     this->makeHeal(49, 8);
     this->makeHeal(49, 9);
 
-    this->spawnRoboss(54, 9);
+    this->spawnCrawler(54, 9);
 
     //Traps & heals before, enemies after
     this->makeCharacter(0, 0);
@@ -923,4 +1003,41 @@ void Game::actOne()
     //     );
     // }
 
+}
+
+void Game::actTwo()
+{
+
+
+    this->createRoom(-1, -1, 6, 3, {0, 0, 1, 0}); // 1st room
+
+    this->createRoom(6, -2, 4, 5, {1, 1, 1, 1}); // 2nd room
+
+    this->createHallway(7, -3, TOP, 2, 4);
+
+    this->createWallBlock(6, -10, 1, 3);
+    this->createWallBlock(7, -10, 3, 1);
+    this->createFloorBlock(7, -9, 2, 2);
+
+    this->createHallway(9, -9, RIGHT, 2, 4);
+    this->createRoom(13, -9, 2, 2, {1, 1, 0, 0});
+    this->createRoom(13, -6, 2, 2, {0, 0, 1, 1});
+
+    this->createRoom(16, -8, 5, 6, {1, 0, 1, 1}); // 3rd room
+    this->createRoom(22, -6, 2, 2, {1, 1, 1, 0});
+
+
+
+
+
+    //Traps & heals before, enemies after
+    this->makeCharacter(0, 0);
+
+
+
+
+
+    this->audio.stopAmbient();
+
+    this->audio.playAmbient("ost1.mp3", 0.05);
 }

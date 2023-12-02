@@ -146,10 +146,10 @@ typedef enum
 
 struct Directions
 {
-    bool left;
-    bool down;
-    bool right;
-    bool top;
+    bool left; 
+    bool down; 
+    bool right; 
+    bool top; 
 };
 
 

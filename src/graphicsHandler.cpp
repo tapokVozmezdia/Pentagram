@@ -1064,6 +1064,15 @@ void GraphicsHandler::buttonManage(Button* button)
             (*it)->visible = false;
         }
     }
+
+    if (button->text == "LEVEL 2")
+    {
+        this->buttonFlag = false;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            (*it)->visible = false;
+        }
+    }
     
     if (button->text == "QUIT")
     {

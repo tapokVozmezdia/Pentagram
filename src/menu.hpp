@@ -12,6 +12,8 @@ class Menu
 
         bool actOneInitiated(GraphicsHandler* graphics);
 
+        bool actTwoInitiated(GraphicsHandler* graphics);
+
         bool isOn();
 
         bool gameEnded();

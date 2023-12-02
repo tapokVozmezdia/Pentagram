@@ -35,6 +35,22 @@ bool Menu::actOneInitiated(GraphicsHandler* graphics)
     return false;
 }
 
+
+bool Menu::actTwoInitiated(GraphicsHandler* graphics)
+{
+    for(auto it : this->buttons)
+    {
+        if (it.text == "LEVEL 2" && it.is_clicked == true)
+        {
+            this->inGame = true;
+            graphics->flagTheStart();
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool Menu::isOn()
 {
     for(auto it : this->buttons)

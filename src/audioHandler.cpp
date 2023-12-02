@@ -47,6 +47,10 @@ void AudioHandler::deathFlag()
 {
     this->combatTimer = FPS * 1000;
     this->combatFlag = false;
+    for (auto it = this->soundNameMap.begin(); it != this->soundNameMap.end(); ++it)
+    {
+        StopSound((*it).second);
+    }
 }
 
 void AudioHandler::triggerCombatMusic()
@@ -118,12 +122,14 @@ void AudioHandler::soundCheck()
                 if (((Entity*)(*it))->movingAnimation != nullptr)
                 {
                     if (((Entity*)(*it))->movingFlag)
-                    {
-                        this->addToQueue(*(((Entity*)(*it))->animation->soundNames.begin()), false, false);
+                    {   
+                        if (!((Entity*)(*it))->animation->soundNames.empty())
+                            this->addToQueue(*(((Entity*)(*it))->animation->soundNames.begin()), false, false);
                     }
                     else
                     {
-                        this->removeFromQueue(*(((Entity*)(*it))->movingAnimation->soundNames.begin()));
+                        if (!((Entity*)(*it))->movingAnimation->soundNames.empty())
+                            this->removeFromQueue(*(((Entity*)(*it))->movingAnimation->soundNames.begin()));
                     }
                 }
             }
