@@ -44,6 +44,11 @@ void Game::run()
     this->loadTextures();
     this->loadSounds();
 
+
+    this->audio.playAmbient("menumusic.mp3", 0.5);
+    this->audio.setCombatMusic("track2.mp3", 0.5);
+
+
     while(!WindowShouldClose())
     {
         if (this->menu.actOneInitiated(&(this->graphics)))
@@ -68,8 +73,8 @@ void Game::run()
 
         if (this->menu.gameEnded() && this->menu.menuInGameFlag())
         {
-            // std::cout << "GOT HERE" << std::endl;
             this->audio.stopAmbient();
+            this->audio.playAmbient("menumusic.mp3", 0.5);
             this->menu.defaultAllButtons();
             this->objectNameMap.clear();
             starNum = 0;
@@ -88,7 +93,7 @@ void Game::run()
 
 void Game::makeCharacter(const int x, const int y)
 {
-    llint mc_id = (this->graphics.spawnEntity("robot.png", x - 100, y - 100, 12, 1000, Team::MAIN));
+    llint mc_id = (this->graphics.spawnEntity("robot.png", x - 100, y - 100, 12, 400, Team::MAIN));
     this->objectNameMap["MC"] = mc_id;
     // std::cout << "mc_id: " << std::endl;
     // std::cout << mc_id << std::endl;
@@ -155,7 +160,7 @@ void Game::makeCharacter(const int x, const int y)
     at.soundNames.push_back("swordslice13.mp3");
     at.soundNames.push_back("swordslice14.mp3");
 
-    at.extraSound.push_back("sword_hit.mp3");
+    at.extraSound.push_back("sword_hit2.mp3");
 
     this->graphics.animateEntity(mc_id, at, at);
 
@@ -206,7 +211,7 @@ void Game::makeEnemy(int x, int y)
     x = x * 200;
     y = y * 200;
 
-    llint enemy_id = (this->graphics.spawnEntity("dummy.png", x, y, 15, 100, Team::HOSTILE));
+    llint enemy_id = (this->graphics.spawnEntity("n_enemy1.png", x, y, 15, 100, Team::HOSTILE));
     this->objectNameMap["enemy" + std::to_string(enemy_id)] = enemy_id;
 
     Animation anim;
@@ -215,12 +220,30 @@ void Game::makeEnemy(int x, int y)
     std::list<std::string> nTxt;
     std::vector<double> tQ;
 
-    txt.push_back(this->graphics.getTexture("dummy.png"));
-    txt.push_back(this->graphics.getTexture("dummy2.png"));
-    nTxt.push_back("dummy.png");
-    nTxt.push_back("dummy2.png");
-    tQ.push_back(0.8);
-    tQ.push_back(0.8);
+    for (int i = 0; i < 2; i++)
+    {
+        txt.push_back(this->graphics.getTexture("n_enemy1.png"));
+        txt.push_back(this->graphics.getTexture("n_enemy2.png"));
+        nTxt.push_back("n_enemy1.png");
+        nTxt.push_back("n_enemy2.png");
+        tQ.push_back(0.8);
+        tQ.push_back(0.5);
+    }
+
+    txt.push_back(this->graphics.getTexture("n_enemy2.png"));
+    nTxt.push_back("n_enemy2.png");
+    tQ.push_back(0.2);
+
+    for (int i = 0; i <= 3; ++i)
+    {
+        txt.push_back(this->graphics.getTexture("n_enemy3.png"));
+        txt.push_back(this->graphics.getTexture("n_enemy2.png"));
+        nTxt.push_back("n_enemy3.png");
+        nTxt.push_back("n_enemy2.png");
+        tQ.push_back(0.2);
+        tQ.push_back(0.2);
+    }
+
 
     anim.textureNames = nTxt;
     anim.textures = txt;
@@ -234,16 +257,21 @@ void Game::makeEnemy(int x, int y)
     std::list<std::string> nTxt1;
     std::vector<double> tQ1;
 
-    txt1.push_back(this->graphics.getTexture("dummy_strike.png"));
-    txt1.push_back(this->graphics.getTexture("dummy_strike.png"));
-    nTxt1.push_back("dummy_strike.png");
-    nTxt1.push_back("dummy_strike.png");
-    tQ1.push_back(0.4);
-    tQ1.push_back(0.4);
+    for (int i = 0; i < 10; ++i)
+    {
+        txt1.push_back(this->graphics.getTexture("n_enemy_zap1.png"));
+        txt1.push_back(this->graphics.getTexture("n_enemy_zap2.png"));
+        nTxt1.push_back("n_enemy_zap1.png");
+        nTxt1.push_back("n_enemy_zap1.png");
+        tQ1.push_back(0.05);
+        tQ1.push_back(0.05);
+    }
 
     at.textureNames = nTxt1;
     at.textures = txt1;
     at.timeQueues = tQ1;
+
+    at.soundNames.push_back("zap.mp3");
 
     this->graphics.animateEntity(enemy_id, at, at);
 
@@ -633,6 +661,12 @@ void Game::loadTextures()
 
     this->graphics.loadTextureFromImage("dummy_strike.png");
 
+    this->graphics.loadTextureFromImage("n_enemy1.png");
+    this->graphics.loadTextureFromImage("n_enemy2.png");
+    this->graphics.loadTextureFromImage("n_enemy3.png");
+    this->graphics.loadTextureFromImage("n_enemy_zap1.png");
+    this->graphics.loadTextureFromImage("n_enemy_zap2.png");
+
     this->graphics.loadTextureFromImage("trap1.png");
     this->graphics.loadTextureFromImage("trap2.png");
     this->graphics.loadTextureFromImage("trap_a1.png");
@@ -689,7 +723,13 @@ void Game::loadSounds()
 
     this->audio.loadSoundByName("rob_run.mp3");
 
-    this->audio.loadSoundByName("sword_hit.mp3");
+    this->audio.loadSoundByName("sword_hit2.mp3");
+
+    this->audio.loadSoundByName("menumusic.mp3");
+
+    this->audio.loadSoundByName("track2.mp3");
+
+    this->audio.loadSoundByName("zap.mp3");
 }
 
 
@@ -868,6 +908,9 @@ void Game::actOne()
 
 
     //this->audio.playOst("sclice.mp3");
+
+    this->audio.stopAmbient();
+
     this->audio.playAmbient("ost1.mp3", 0.05);
 
     // this->graphics.fireProjectile();

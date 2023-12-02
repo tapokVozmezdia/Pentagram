@@ -52,6 +52,14 @@
     #define NOISE_LENGTH 1.4
 #endif
 
+#ifndef HOSTILITY_BREAK
+    #define HOSTILITY_BREAK FPS * 3.
+#endif
+
+#ifndef SHIELD_REFRESH_RATE
+    #define SHIELD_REFRESH_RATE FPS / 10.
+#endif
+
 typedef unsigned int uint;
 typedef long long int llint;
 
@@ -156,6 +164,7 @@ struct Button
     Vector2 position = {0, 0};
     std::list<bool> ButtonVisibilityTrace;
     Button* parent = nullptr;
+    bool hovered = false;
 };
 
 
@@ -202,6 +211,8 @@ struct Entity : GameObject
     int baseDamage;
     int baseHP;
     int curHP;
+    int baseShield = 0;
+    int curShield = 0;
     std::shared_ptr<Animation> attackAnimation = nullptr;
     std::shared_ptr<Animation> getHitAnimation = nullptr;
     std::shared_ptr<Animation> movingAnimation = nullptr;

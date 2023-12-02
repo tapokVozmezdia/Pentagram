@@ -4,6 +4,7 @@ void Menu::linkMenu(GraphicsHandler* graphics)
 {
     this->linkedGraphics = graphics;
     this->buttons.push_back({IdCounter::getFreeId(), "PLAY", true});
+    this->buttons.push_back({IdCounter::getFreeId(), "SETTINGS", true});
     this->buttons.push_back({IdCounter::getFreeId(), "STATS", true});
     this->buttons.push_back({IdCounter::getFreeId(), "QUIT", true});
     this->buttons.push_back({IdCounter::getFreeId(), "LEVELS", false});
@@ -14,6 +15,7 @@ void Menu::linkMenu(GraphicsHandler* graphics)
     this->buttons.push_back({IdCounter::getFreeId(), "LEVEL 4", false});
     this->buttons.push_back({IdCounter::getFreeId(), "BACK", false});
 
+    
     this->defaultButtons = this->buttons;
 
     this->linkedGraphics->linkButtons(&(this->buttons));

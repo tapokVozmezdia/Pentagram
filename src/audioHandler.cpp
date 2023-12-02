@@ -29,6 +29,32 @@ void AudioHandler::loadSoundByName(const std::string& sName)
     this->soundNameMap[sName] = sound;
 }
 
+void AudioHandler::setCombatMusic(const std::string& sName, double vol)
+{
+    for(auto it : this->combatMusic)
+    {
+        if (it == sName)
+        {
+            return;
+        }
+    }
+    this->combatMusic.push_back(sName);
+    this->combatVol = vol;
+    SetSoundVolume(this->soundNameMap[sName], (float)vol);
+}
+
+void AudioHandler::deathFlag()
+{
+    this->combatTimer = FPS * 1000;
+    this->combatFlag = false;
+}
+
+void AudioHandler::triggerCombatMusic()
+{
+    this->combatTimer = 0;
+    this->combatFlag = true;
+}
+
 void AudioHandler::playAmbient(const std::string& ambient, double vol)
 {
     this->currentAmbient = ambient;
@@ -60,14 +86,16 @@ void AudioHandler::soundCheck()
         {
             if ((*it)->nL == true)
             {
-                if (((Entity*)(*it))->curSt == 1 && !(((Entity*)(*it))->animation->extraSound.empty()))
+                if (((Entity*)(*it))->curSt == 1 && !(((Entity*)(*it))->animation->soundNames.empty()))
                 {
+                    // std::cout << "KEK" << std::endl;
                     int r = GetRandomValue(1, ((Entity*)(*it))->animation->soundNames.size());
                     auto jt = ((Entity*)(*it))->animation->soundNames.begin();
                     for (int i = 1; i < r; ++i)
                     {
                         jt++;
                     }
+                    //std::cout << *jt << std::endl;
                     this->addToQueue(*jt, true, true);
                     //std::cout << "Tb| 6OT" << std::endl;
 
@@ -100,6 +128,81 @@ void AudioHandler::soundCheck()
                 }
             }
         }
+
+
+    if (this->combatFlag == true && this->combatMusicPlaying == false
+        && !this->combatMusic.empty())
+    {
+        int r = GetRandomValue(0, this->combatMusic.size() - 1);
+        auto it = this->combatMusic.begin();
+        for (int i = 0; i < r; ++i)
+        {
+            it++;
+        }
+        this->addToQueue(*it, false, false);
+        this->combatMusicPlaying = true;
+        this->curCombatTrack = (*it);
+    }
+
+    if (this->combatFlag == true)
+    {
+        bool flg = false;
+        this->curCombatVol = 1;
+        for (auto it : this->combatMusic)
+        {
+            if (IsSoundPlaying(this->soundNameMap[it]))
+            {
+                flg = true;
+                break;
+            }
+        }
+        if (!flg)
+        {
+            int r = GetRandomValue(0, this->combatMusic.size() - 1);
+            auto it = this->combatMusic.begin();
+            for (int i = 0; i < r; ++i)
+            {
+                it++;
+            }
+            this->addToQueue(*it, false, false);
+            this->combatMusicPlaying = true;
+            this->curCombatTrack = (*it);
+        }
+    }
+    
+    if (this->combatFlag == false)
+    {
+        if (this->combatTimer >= FPS * 3)
+        {
+            //std::cout << "EXCEEDED" << std::endl;
+            for (auto it : this->combatMusic)
+            {
+                //std::cout << "EXCEEDED" << std::endl;
+                this->removeFromQueue(it);
+            }
+            this->combatTimer = 0;
+            this->combatMusicPlaying = false;
+        }
+        else if (this->combatMusicPlaying == true)
+        {
+            this->combatTimer++;
+            this->curCombatVol -= (1 /((double)FPS * 3.));
+            // std::cout << curCombatVol << std::endl;
+        }
+    }
+
+    this->combatFlag = false;
+
+
+
+    if (this->combatMusicPlaying)
+    {
+        if (IsSoundPlaying(this->soundNameMap[this->curCombatTrack]))
+        {
+            SetSoundVolume(this->soundNameMap[this->curCombatTrack], this->curCombatVol * this->combatVol);
+        }
+    }
+
     this->run();
 }
 

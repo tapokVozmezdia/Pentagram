@@ -14,6 +14,12 @@ class AudioHandler
 
         void loadSoundByName(const std::string& sName);
 
+        void setCombatMusic(const std::string& sName, double vol);
+
+        void deathFlag();
+
+        void triggerCombatMusic();
+
         void playAmbient(const std::string& ambient, double vol);
         void stopAmbient();
 
@@ -37,11 +43,22 @@ class AudioHandler
         void removeFromQueue(const std::string& snd);
 
 
+
+        llint combatTimer = 0;
+        bool combatFlag = false;
+        bool combatMusicPlaying = false;
+        double curCombatVol = 1;
+        std::string curCombatTrack;
+
         llint recieverId;
         Vector2* recieverPos;
 
         double ambientVol = 1;
         std::string currentAmbient = "null";
+
+
+        std::list<std::string> combatMusic;
+        double combatVol = 1;
 
 
         // These point to objects stored in graphics handler 

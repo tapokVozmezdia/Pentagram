@@ -118,6 +118,12 @@ class GraphicsHandler
         Vector2* cameraTarget = nullptr;
         llint targetId;
 
+
+        llint damageTimer = 0;
+
+        llint shieldTimer = 0;
+
+
         bool buttonFlag = false;
 
         bool startFlag = false;

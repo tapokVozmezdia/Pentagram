@@ -372,6 +372,13 @@ void GraphicsHandler::centerCamera(llint t_id)
 {
     this->cameraTarget = &(this->objectMap[t_id]->coordinates);
     this->targetId = t_id;
+
+    if (this->objectMap[t_id]->nL)
+    {
+        ((Entity*)(this->objectMap[t_id]))->baseShield = 200;
+        ((Entity*)(this->objectMap[t_id]))->curShield = 200;
+    }
+
     // std::cout << "HERE " << std::endl;
     // std::cout << this->objectMap[t_id]->coordinates.x << " " <<
     //     this->objectMap[t_id]->coordinates.y << std::endl;
@@ -617,14 +624,39 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
             )
 
         {
-            ((Entity*)(j))->curHP -= ((Entity*)(i))->baseDamage;
-            if (((Entity*)(j))->team != MAIN)
+
+            if (((Entity*)(i))->baseDamage >= 0)
+            {
+                if (((Entity*)(j))->curShield == 0)
+                {
+                    ((Entity*)(j))->curHP -= ((Entity*)(i))->baseDamage;
+                }
+                else
+                {
+                    if (((Entity*)(j))->curShield < ((Entity*)(i))->baseDamage)
+                    {
+                        ((Entity*)(j))->curHP -= (((Entity*)(i))->baseDamage - ((Entity*)(j))->curShield);
+                        ((Entity*)(j))->curShield = 0;
+                    }
+                    else
+                    {
+                        ((Entity*)(j))->curShield -= ((Entity*)(i))->baseDamage;
+                    }
+                }
+            }
+            else
+                ((Entity*)(j))->curHP -= ((Entity*)(i))->baseDamage;
 
             ((Entity*)(i))->didDamage = true;
 
-            std::cout << "OBJECT " << ((Entity*)(j))->objectId <<
+            if (((Entity*)(j))->team != MAIN)
+            {
+                std::cout << "OBJECT " << ((Entity*)(j))->objectId <<
                 " IS AT " << ((Entity*)(j))->curHP << 
                 " HEALTH POINTS" << std::endl;
+            }
+            else
+                this->damageTimer = 0;
 
 
             if (j->objectId != this->targetId)
@@ -648,14 +680,40 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
             || (((Entity*)(j))->isTrap == true && ((Entity*)(j))->baseDamage >= 0))
             )
         {
-            ((Entity*)(i))->curHP -= ((Entity*)(j))->baseDamage;
+
+            if (((Entity*)(j))->baseDamage >= 0)
+            {
+                if (((Entity*)(i))->curShield == 0)
+                {
+                    ((Entity*)(i))->curHP -= ((Entity*)(j))->baseDamage;
+                }
+                else
+                {
+                    if (((Entity*)(i))->curShield < ((Entity*)(j))->baseDamage)
+                    {
+                        ((Entity*)(i))->curHP -= (((Entity*)(j))->baseDamage - ((Entity*)(i))->curShield);
+                        ((Entity*)(i))->curShield = 0;
+                    }
+                    else
+                    {
+                        ((Entity*)(i))->curShield -= ((Entity*)(j))->baseDamage;
+                    }
+                }
+            }
+            else
+                ((Entity*)(i))->curHP -= ((Entity*)(j))->baseDamage;
 
             ((Entity*)(j))->didDamage = true;
 
             if (((Entity*)(i))->team != MAIN)
-            std::cout << "OBJECT " << ((Entity*)(i))->objectId <<
+            {
+                std::cout << "OBJECT " << ((Entity*)(i))->objectId <<
                 " IS AT " << ((Entity*)(i))->curHP << 
                 " HEALTH POINTS" << std::endl;
+            }
+            else
+                this->damageTimer = 0;
+
 
             if (i->objectId != this->targetId)
             {
@@ -750,6 +808,7 @@ void GraphicsHandler::enemyHostile()
                     {
                         this->moveTextureDelta((*j)->objectId, dx, 0);
                         this->moveTextureDelta((*j)->objectId, 0, dy);
+                        this->audio->triggerCombatMusic();
                     }
                     
                     if (ObjectHandler::collided(*i, *j) && makeNoise)
@@ -803,6 +862,7 @@ void GraphicsHandler::enemyHostile()
                     {
                         this->moveTextureDelta((*i)->objectId, dx, 0);
                         this->moveTextureDelta((*i)->objectId, 0, dy);
+                        this->audio->triggerCombatMusic();
                     }
                     
                     if (ObjectHandler::collided(*i, *j) && makeNoise)
@@ -831,11 +891,46 @@ void GraphicsHandler::afterFightCheck()
                 {
                     this->startFlag = false;
                     this->cameraTarget = nullptr;
+                    this->audio->deathFlag();
                 }    
                 to_delete_list.push_back(it->objectId);
             }
         }
     }
+
+
+    if (((Entity*)(this->objectMap[targetId]))->curShield
+        > ((Entity*)(this->objectMap[targetId]))->baseShield)
+    {
+        ((Entity*)(this->objectMap[targetId]))->curShield = ((Entity*)(this->objectMap[targetId]))->baseShield;
+    }
+
+
+    if (this->damageTimer >= HOSTILITY_BREAK)
+    {
+        if (this->shieldTimer >= SHIELD_REFRESH_RATE)
+        {
+            if (((Entity*)(this->objectMap[targetId]))->curShield
+                < ((Entity*)(this->objectMap[targetId]))->baseShield)
+            {
+                ((Entity*)(this->objectMap[targetId]))->curShield += 1;
+                //std::cout << ((Entity*)(this->objectMap[targetId]))->baseShield - SHIELD_REFRESH_RATE << std::endl;
+            }
+            this->shieldTimer = 0;
+        }
+        else
+        {
+            this->shieldTimer++;
+        }
+    }
+
+
+    if (this->damageTimer <= HOSTILITY_BREAK)
+    {
+        this->damageTimer++;
+    }
+
+
 
     for (auto i : to_delete_list)
     {
@@ -859,7 +954,10 @@ void GraphicsHandler::drawButtons()
                 this->buttonFlag = true;
                 tmp_flag = true;
             }
-            DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, DARKBLUE);
+            if ((*it)->hovered == false)
+                DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, DARKBLUE);
+            else
+                DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, PURPLE);
             DrawText(((*it)->text).c_str(), WIDTH / 2 - 125, 20 + 70 * counter, 24, RED);
             (*it)->position = {(float)(WIDTH / 2 - 125), (float)(20 + 70 * counter)};
             counter++;
@@ -888,6 +986,8 @@ void GraphicsHandler::buttonClickCheck()
     int my = GetMouseY();
     for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
     {
+        (*it)->hovered = false;
+
         if ((*it)->visible == false)
         {
             (*it)->is_clicked = false;
@@ -896,26 +996,28 @@ void GraphicsHandler::buttonClickCheck()
         if (mx < (*it)->position.x + (*it)->width && 
         mx > (*it)->position.x &&
         my < (*it)->position.y + (*it)->height && 
-        my > (*it)->position.y
-        && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        my > (*it)->position.y)
         {
-            (*it)->is_clicked = true;
+            (*it)->hovered = true;
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {    (*it)->is_clicked = true;
 
-            for (auto ik = this->buttonList.begin(); ik != this->buttonList.end(); ik++)
-            {
-                if ((*ik)->button_id != (*it)->button_id)
+                for (auto ik = this->buttonList.begin(); ik != this->buttonList.end(); ik++)
                 {
-                    (*ik)->is_clicked = false;
+                    if ((*ik)->button_id != (*it)->button_id)
+                    {
+                        (*ik)->is_clicked = false;
+                    }
                 }
+                
+                std::cout << (*it)->text + " BUTTON PRESSED!" << std::endl;
+
+                this->buttonManage(*it);
+
+                break;
             }
-            
-            std::cout << (*it)->text + " BUTTON PRESSED!" << std::endl;
-
-            this->buttonManage(*it);
-
-            break;
+            (*it)->is_clicked = false;
         }
-        (*it)->is_clicked = false;
     }
 }
 
@@ -927,7 +1029,7 @@ void GraphicsHandler::buttonManage(Button* button)
         int i = 1;
         for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
         {
-            if (i > 3 && i < 6)
+            if (i > 4 && i < 7)
             {
                 (*it)->visible = true;
             }
@@ -943,7 +1045,7 @@ void GraphicsHandler::buttonManage(Button* button)
         int i = 1;
         for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
         {
-            if (i > 5 && i < 10)
+            if (i > 6 && i < 11)
             {
                 (*it)->visible = true;
             }
@@ -1041,6 +1143,8 @@ void GraphicsHandler::run()
 
                 DrawText(("HP: " + std::to_string(((Entity*)(this->objectMap[this->targetId]))->curHP)).c_str(), 10, 42, 32, RED);
 
+                DrawText(("SHIELD: " + std::to_string(((Entity*)(this->objectMap[this->targetId]))->curShield)).c_str(), 10, 74, 32, SKYBLUE);
+
                 // For level-design purposes
                 int xc, yc;
                 int boost_x = 0, boost_y = 0;
@@ -1055,11 +1159,11 @@ void GraphicsHandler::run()
 
                 DrawText(("BLOCK X: " + std::to_string(
                     (int)(this->activeCamera.target.x / 200) - boost_x
-                )).c_str(), 10, 74, 32, GREEN);
+                )).c_str(), 10, 106, 32, GREEN);
 
                 DrawText(("BLOCK Y: " + std::to_string(
                     (int)(this->activeCamera.target.y / 200) - boost_y
-                )).c_str(), 10, 106, 32, GREEN);
+                )).c_str(), 10, 138, 32, GREEN);
             }
 
         }
