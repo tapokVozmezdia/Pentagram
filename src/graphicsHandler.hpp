@@ -28,6 +28,11 @@ class GraphicsHandler
         llint spawnEntity(const std::string& txtr, int p_x, int p_y, double dmg, double hp, Team tm);
 
 
+        void makeFloorFromObj(llint t_id);
+
+        void setFloorTint(const Tint& tint);
+
+
         void setHitbox(llint t_id, const Hitbox& hbox);
         void setHitbox(llint t_id, const int width, const int height);
 
@@ -127,6 +132,8 @@ class GraphicsHandler
         bool buttonFlag = false;
 
         bool startFlag = false;
+
+        Tint curTint = DEFAULT_TINT;
         
         Button* buttonPressed = nullptr;
 

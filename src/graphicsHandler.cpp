@@ -9,6 +9,8 @@ GraphicsHandler::GraphicsHandler()
     
 }
 
+
+
 GraphicsHandler::~GraphicsHandler()
 {
     for(auto obj : this->objectList)
@@ -125,6 +127,19 @@ llint GraphicsHandler::spawnEntity(const std::string& txtr, int p_x, int p_y, do
     this->objectList.push_back(ent);
     this->objectMap[this->objectList.back()->objectId] = (this->objectList.back());
     return this->objectList.back()->objectId;
+}
+
+
+
+void GraphicsHandler::makeFloorFromObj(llint t_id)
+{
+    this->objectMap[t_id]->floor = true;
+}
+
+
+void GraphicsHandler::setFloorTint(const Tint& tint)
+{
+    this->curTint = tint;
 }
 
 
@@ -409,9 +424,15 @@ void GraphicsHandler::collisionCheck()
 {
     for (auto i = this->objectList.begin(); i != this->objectList.end(); ++i)
     {
+        if ((*i)->floor || (*i)->isWall)
+            continue;
+
         for (auto j = i; j != this->objectList.end(); ++j)
         {
             if (i == j)
+                continue;
+
+            if ((*j)->floor || (*j)->isWall)
                 continue;
 
             // std::cout << "\tCOORD1\t COORD2\n" << 
@@ -457,6 +478,12 @@ void GraphicsHandler::animationCheck()
     for (auto i = this->objectList.begin(); 
         i != this->objectList.end(); ++i)
     {
+        if ((*i)->floor)
+            continue;
+
+        if ((*i)->isWall)
+            continue;
+
         if ((*i)->nL == false && (*i)->nLP == false) // If not Entity/Projectile
         {
             if ((*i)->animation == nullptr)
@@ -808,8 +835,9 @@ void GraphicsHandler::enemyHostile()
                     {
                         this->moveTextureDelta((*j)->objectId, dx, 0);
                         this->moveTextureDelta((*j)->objectId, 0, dy);
-                        this->audio->triggerCombatMusic();
                     }
+
+                    this->audio->triggerCombatMusic();
                     
                     if (ObjectHandler::collided(*i, *j) && makeNoise)
                     {
@@ -862,8 +890,9 @@ void GraphicsHandler::enemyHostile()
                     {
                         this->moveTextureDelta((*i)->objectId, dx, 0);
                         this->moveTextureDelta((*i)->objectId, 0, dy);
-                        this->audio->triggerCombatMusic();
                     }
+
+                    this->audio->triggerCombatMusic();
                     
                     if (ObjectHandler::collided(*i, *j) && makeNoise)
                     {
@@ -994,9 +1023,9 @@ void GraphicsHandler::buttonClickCheck()
             continue;
         }
         if (mx < (*it)->position.x + (*it)->width && 
-        mx > (*it)->position.x &&
+        mx > (*it)->position.x && 
         my < (*it)->position.y + (*it)->height && 
-        my > (*it)->position.y)
+        my > (*it)->position.y) 
         {
             (*it)->hovered = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -1142,7 +1171,15 @@ void GraphicsHandler::run()
                         int flipped = 1;
                         if (i->isFlipped)
                             flipped *= -1;
-                        DrawTextureRec(*(i->texture), {0,0,(float)flipped*(i->texture)->width,(float)(i->texture)->height}, {i->coordinates.x, i->coordinates.y}, Color{255,255,255,255});
+                        
+                        
+                        Color col = enumHandler::tintToColor(DEFAULT_TINT);
+
+                        if ((i->floor))
+                            col = enumHandler::tintToColor(this->curTint);
+
+
+                        DrawTextureRec(*(i->texture), {0, 0, (float)flipped*(i->texture)->width,(float)(i->texture)->height}, {i->coordinates.x, i->coordinates.y}, col);
                     }
 
                 EndMode2D();
@@ -1178,7 +1215,7 @@ void GraphicsHandler::run()
         }
 
         DrawText("PROJECT PENTAGRAM", 10, 10, 32, DARKPURPLE);
-        //DrawFPS(10, 200);
+        DrawFPS(10, 170);
 
 
     EndDrawing();

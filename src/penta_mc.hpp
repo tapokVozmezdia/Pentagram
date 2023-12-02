@@ -128,6 +128,23 @@ namespace ContainerHandler
 
 typedef enum
 {
+    DEFAULT_TINT = 0,
+    RED_TINT,
+    YELLOW_TINT,
+    GREEN_TINT,
+    BLUE_TINT
+} Tint;
+
+
+namespace enumHandler
+{
+    Color tintToColor(const Tint& tnt);
+}
+
+
+
+typedef enum
+{
     MAIN = 0,
     ALLY,
     NEUTRAL,
@@ -196,6 +213,7 @@ struct GameObject
     llint objectId; // Unique id  
     std::shared_ptr<Animation> animation = nullptr;
     bool collision; // Is the object collided
+    bool floor = false;
     bool isWall = false;
     bool nL = false; // Crutch for inheritance, for Entities
     bool nLP = false; 

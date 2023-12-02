@@ -78,3 +78,22 @@ const Vector2 ObjectHandler::getVectorWithLength(const Vector2& u, double lngth)
     double dst = ObjectHandler::measureDistance({0, 0}, u);
     return {u.x / (float)dst * (float)lngth, u.y / (float)dst * (float)lngth};
 }
+
+Color enumHandler::tintToColor(const Tint& tnt)
+{
+    switch (tnt)
+    {
+        case DEFAULT_TINT:
+            return {255,255,255,255};
+        case RED_TINT:
+            return {255, 64, 64, 255};
+        case YELLOW_TINT:
+            return {255, 255, 64, 255};
+        case GREEN_TINT:
+            return {64, 255, 64, 255};
+        case BLUE_TINT:
+            return {64, 64, 255, 255};
+        default:
+            return {255, 255, 255, 255};
+    };
+}

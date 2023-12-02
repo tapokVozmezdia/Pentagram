@@ -332,17 +332,24 @@ void Game::spawnCrawler(int x, int y)
 
     Animation at;
 
-    std::list<Texture2D*> txt;
-    std::list<std::string> nTxt;
-    std::vector<double> tQ;
+    for (int i = 1; i <= 4; ++i)
+    {
+        at.textures.push_back(this->graphics.getTexture("crawler_a" + 
+        std::to_string(i) + ".png"));
+        at.textureNames.push_back("crawler_a" + 
+        std::to_string(i) + ".png");
+    }
 
-    txt.push_back(this->graphics.getTexture("crawler1.png"));
-    nTxt.push_back("crawler1.png");
-    tQ.push_back(1);
+    at.textures.push_back(this->graphics.getTexture("crawler1.png"));
+    at.textureNames.push_back("crawler1.png");
 
-    at.textureNames = nTxt;
-    at.textures = txt;
-    at.timeQueues = tQ;
+    at.timeQueues.push_back(0.5);
+    at.timeQueues.push_back(0.08);
+    at.timeQueues.push_back(0.04);
+    at.timeQueues.push_back(0.15);
+    at.timeQueues.push_back(1);
+
+    at.soundNames.push_back("fazedstomp.mp3");
 
     this->graphics.animateEntity(enemy_id, at, at);
 
@@ -511,6 +518,8 @@ void Game::makeFloor(const int x, const int y)
     else
         floor_id = (this->graphics.spawnTexture(("nnfloor.png"), x, y));
     this->objectNameMap["floor" + std::to_string(floor_id)] = floor_id;
+    
+    this->graphics.makeFloorFromObj(floor_id);
 
     // Animation anim;
 
@@ -790,6 +799,11 @@ void Game::loadTextures()
     this->graphics.loadTextureFromImage("rob_r6.png");
     this->graphics.loadTextureFromImage("rob_r7.png");
     this->graphics.loadTextureFromImage("rob_r8.png");
+
+    for (int i = 1; i <= 4; ++i)
+    {
+        this->graphics.loadTextureFromImage("crawler_a" + std::to_string(i) + ".png");
+    }
 }
 
 
@@ -810,6 +824,8 @@ void Game::loadSounds()
     this->audio.loadSoundByName("track2.mp3");
 
     this->audio.loadSoundByName("zap.mp3");
+
+    this->audio.loadSoundByName("fazedstomp.mp3");
 }
 
 
@@ -853,6 +869,8 @@ void Game::actOne()
     // // std::cout << "mc_id: " << std::endl;
     // // std::cout << mc_id << std::endl;
     // this->graphics.centerCamera(mc_id);
+
+    this->graphics.setFloorTint(DEFAULT_TINT);
 
     this->createRoom(-2, -2, 4, 4, Directions{0, 0, 1, 0}); // 1st room
     this->createHallway(3, -1, RIGHT, 2, 5);
@@ -1007,7 +1025,7 @@ void Game::actOne()
 
 void Game::actTwo()
 {
-
+    this->graphics.setFloorTint(RED_TINT);
 
     this->createRoom(-1, -1, 6, 3, {0, 0, 1, 0}); // 1st room
 
@@ -1026,6 +1044,71 @@ void Game::actTwo()
     this->createRoom(16, -8, 5, 6, {1, 0, 1, 1}); // 3rd room
     this->createRoom(22, -6, 2, 2, {1, 1, 1, 0});
 
+    this->createHallway(25, -6, RIGHT, 2, 2);
+    this->createRoom(27, -6, 2, 2, {1, 1, 0, 1});
+    this->createRoom(18, -10, 1, 1, {0, 1, 1, 0});
+    this->createHallway(20, -10, RIGHT, 1, 5);
+
+    this->createRoom(25, -12, 6, 5, {1, 1, 0, 0});
+    this->createHallway(11, 0, RIGHT, 1, 5);
+    this->createRoom(16, 0, 1, 1, {1, 1, 1, 0});
+    this->createHallway(17, 0, RIGHT, 1, 5);
+
+    this->createHallway(22, -3, DOWN, 2, 3);
+
+    this->createFloorBlock(22, 0, 2, 1);
+    this->createWallBlock(22, 1, 3, 1);
+    this->createWallBlock(24, 0, 1, 1);
+
+    this->createHallway(16, 2, DOWN, 1, 2);
+    this->createWallBlock(17, 4, 1, 3);
+    this->createFloorBlock(16, 4, 1, 2);
+    this->createWallBlock(16, 6, 1, 1);
+    this->createRoom(7, 4, 2, 2, {0, 0, 1, 1});
+
+    this->createHallway(10, 4, RIGHT, 2, 2);
+    this->createWallBlock(14, 3, 1, 1);
+    this->createHallway(15, 4, LEFT, 2, 1);
+
+    this->createRoom(12, 4, 2, 2, {1, 1, 1, 0});
+    this->createFloorBlock(15, 4, 1, 2);
+    this->createWallBlock(15, 6, 1, 1);
+
+    this->createRoom(11, 7, 4, 4, {0, 0, 1, 1}); // 4th room
+    this->createHallway(27, -3, DOWN, 2, 6);
+
+    this->createRoom(23, 3, 10, 12, {1, 0, 1, 1}); // 5th room
+
+    this->createHallway(16, 8, RIGHT, 2, 6);
+
+    this->createHallway(34, 8, RIGHT, 2, 4);
+    this->createRoom(38, 8, 2, 2, {1, 1, 0, 0});
+    this->createHallway(38, 11, DOWN, 2, 5);
+
+    this->createRoom(38, 16, 2, 2, {0, 0, 1, 1});
+    this->createRoom(41, 16, 2, 2, {1, 1, 0, 0});
+
+    this->createHallway(41, 19, DOWN, 2, 12);
+    this->createRoom(41, 31, 2, 2, {1, 0, 0, 1});
+    this->createHallway(40, 31, LEFT, 2, 6);
+    this->createRoom(32, 31, 2, 2, {0, 0, 1, 1});
+
+    this->createRoom(26, 19, 14, 11, {0, 1, 0, 1}); // 14 11
+
+    this->createRoom(32, 16, 2, 2, {1, 1, 0, 0});
+
+    this->createHallway(31, 16, LEFT, 2, 6);
+
+    this->createRoom(23, 16, 2, 2, {0, 1, 1, 0});
+
+    this->createHallway(23, 19, DOWN, 2, 15);
+
+
+    this->createRoom(21, 34, 6, 6, {0, 0, 0, 1});
+
+    //this->createRoom(32, 18, 2, 2, {1, 1, 0, 0});
+
+    //this->createHallway(13, 0, RIGHT, 1, 5);
 
 
 
@@ -1033,6 +1116,8 @@ void Game::actTwo()
     //Traps & heals before, enemies after
     this->makeCharacter(0, 0);
 
+
+    this->spawnCrawler(8, 0);
 
 
 
