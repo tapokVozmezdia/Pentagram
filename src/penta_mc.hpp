@@ -60,6 +60,18 @@
     #define SHIELD_REFRESH_RATE FPS / 10.
 #endif
 
+#ifndef HP_BUFF
+    #define HP_BUFF 200
+#endif
+
+#ifndef SH_BUFF
+    #define SH_BUFF 100 
+#endif
+
+#ifndef AT_BUFF
+    #define AT_BUFF 8
+#endif
+
 typedef unsigned int uint;
 typedef long long int llint;
 
@@ -175,6 +187,7 @@ struct Button
     llint button_id;
     std::string text;
     bool visible;
+    bool isUpgrade = false;
     uint width = 250;
     uint height = 50;
     bool is_clicked = false;
@@ -182,8 +195,8 @@ struct Button
     std::list<bool> ButtonVisibilityTrace;
     Button* parent = nullptr;
     bool hovered = false;
+    std::string upgradeText = "null";
 };
-
 
 struct Animation
 {
@@ -284,6 +297,19 @@ namespace ObjectHandler
     const Vector2 getVectorDiff(const Vector2& u, const Vector2& v);
     const Vector2 getVectorWithLength(const Vector2& u, double lngth); // Returns same vector with different length
 }
+
+
+
+
+struct ProgressTrack
+{
+    int HP_BUFFS = 0;
+    int SH_BUFFS = 0;
+    int AT_BUFFS = 0;
+};
+
+
+
 
 
 // Basic structure of Abelian group, just thought it would be a fun solution :)

@@ -40,6 +40,14 @@ void GraphicsHandler::linkAudio(AudioHandler* audio_ptr)
 
 
 
+void GraphicsHandler::linkProgressTracker(ProgressTrack* tracker, std::vector<bool>* lvls)
+{
+    this->linkedTracker = tracker;
+    this->passedLvls = lvls;
+}
+
+
+
 void GraphicsHandler::loadTextureFromImage(const std::string& imgName)
 {
     std::string tmp = "..\\assets\\images\\" + imgName;
@@ -102,6 +110,9 @@ llint GraphicsHandler::spawnEntity(const std::string& txtr, Vector2& pos, double
     ent->hitbox.width = ent->texture->width;
     ent->hitbox.height = ent->texture->height;
 
+    if (tm == HOSTILE)
+        this->enemyNum++;
+
     this->objectList.push_back(ent);
     this->objectMap[this->objectList.back()->objectId] = (this->objectList.back());
     return this->objectList.back()->objectId;
@@ -123,6 +134,9 @@ llint GraphicsHandler::spawnEntity(const std::string& txtr, int p_x, int p_y, do
     ent->team = tm;
     ent->hitbox.width = ent->texture->width;
     ent->hitbox.height = ent->texture->height;
+
+    if (tm == HOSTILE)
+        this->enemyNum++;
 
     this->objectList.push_back(ent);
     this->objectMap[this->objectList.back()->objectId] = (this->objectList.back());
@@ -174,11 +188,21 @@ void GraphicsHandler::trapFromEntity(const llint object_id)
         throw std::logic_error("Non-entity id was ginven into trapFromEntity func");
     }
     ((Entity*)(this->objectMap[object_id]))->isTrap = true;
+
+    this->enemyNum--;
 }
 
 
 void GraphicsHandler::deleteTexture(const llint object_id)
 {
+    if ((this->objectMap[object_id])->nL == true)
+    {
+        if (((Entity*)(this->objectMap[object_id]))->team == HOSTILE &&
+            ((Entity*)(this->objectMap[object_id]))->isTrap == false)
+        {
+            this->enemyNum--;
+        }
+    }
     // std::cout << "MUST DELETE" << std::endl;
     for(auto it = this->objectList.begin(); it != this->objectList.end(); it++)
     {
@@ -672,15 +696,21 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
                 }
             }
             else
+            {
                 ((Entity*)(j))->curHP -= ((Entity*)(i))->baseDamage;
+                if (((Entity*)(j))->curHP >= ((Entity*)(j))->baseHP)
+                {
+                    ((Entity*)(j))->curHP = ((Entity*)(j))->baseHP;
+                }
+            }
 
             ((Entity*)(i))->didDamage = true;
 
             if (((Entity*)(j))->team != MAIN)
             {
-                std::cout << "OBJECT " << ((Entity*)(j))->objectId <<
-                " IS AT " << ((Entity*)(j))->curHP << 
-                " HEALTH POINTS" << std::endl;
+                // std::cout << "OBJECT " << ((Entity*)(j))->objectId <<
+                // " IS AT " << ((Entity*)(j))->curHP << 
+                // " HEALTH POINTS" << std::endl;
             }
             else
                 this->damageTimer = 0;
@@ -728,15 +758,21 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
                 }
             }
             else
+            {
                 ((Entity*)(i))->curHP -= ((Entity*)(j))->baseDamage;
+                if (((Entity*)(j))->curHP >= ((Entity*)(j))->baseHP)
+                {
+                    ((Entity*)(j))->curHP = ((Entity*)(j))->baseHP;
+                }
+            }
 
             ((Entity*)(j))->didDamage = true;
 
             if (((Entity*)(i))->team != MAIN)
             {
-                std::cout << "OBJECT " << ((Entity*)(i))->objectId <<
-                " IS AT " << ((Entity*)(i))->curHP << 
-                " HEALTH POINTS" << std::endl;
+                // std::cout << "OBJECT " << ((Entity*)(i))->objectId <<
+                // " IS AT " << ((Entity*)(i))->curHP << 
+                // " HEALTH POINTS" << std::endl;
             }
             else
                 this->damageTimer = 0;
@@ -920,6 +956,7 @@ void GraphicsHandler::afterFightCheck()
                 {
                     this->startFlag = false;
                     this->cameraTarget = nullptr;
+                    this->enemyNum = 0;
                     this->audio->deathFlag();
                 }    
                 to_delete_list.push_back(it->objectId);
@@ -960,10 +997,23 @@ void GraphicsHandler::afterFightCheck()
     }
 
 
-
     for (auto i : to_delete_list)
     {
         this->deleteTexture(i);
+    }
+
+    if (this->cameraTarget != nullptr)
+    {
+        if (this->enemyNum == 0)
+        {
+            if (IsKeyPressed(KEY_SPACE))
+            {
+                this->startFlag = false;
+                this->victoryFlag = true;
+                this->cameraTarget = nullptr;
+                this->audio->deathFlag();
+            }
+        }
     }
 }
 
@@ -983,12 +1033,26 @@ void GraphicsHandler::drawButtons()
                 this->buttonFlag = true;
                 tmp_flag = true;
             }
-            if ((*it)->hovered == false)
-                DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, DARKBLUE);
+            if (!(*it)->isUpgrade)
+            {
+                if ((*it)->hovered == false)
+                    DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, DARKBLUE);
+                else
+                    DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, PURPLE);
+                DrawText(((*it)->text).c_str(), WIDTH / 2 - 125, 20 + 70 * counter, 24, RED);
+                (*it)->position = {(float)(WIDTH / 2 - 125), (float)(20 + 70 * counter)};
+            }
             else
-                DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, PURPLE);
-            DrawText(((*it)->text).c_str(), WIDTH / 2 - 125, 20 + 70 * counter, 24, RED);
-            (*it)->position = {(float)(WIDTH / 2 - 125), (float)(20 + 70 * counter)};
+            {
+                if ((*it)->hovered == false)
+                    DrawRectangle(WIDTH / 2 - 200 + 150 * counter, HEIGHT / 2 - 50, 100, 100, DARKGRAY);
+                else
+                    DrawRectangle(WIDTH / 2 - 200 + 150 * counter, HEIGHT / 2 - 50, 100, 100, DARKGREEN);
+                DrawText(((*it)->upgradeText).c_str(), WIDTH / 2 - 200 + 150 * counter, HEIGHT / 2 + 84, 16, WHITE);
+                (*it)->position = {(float)(WIDTH / 2 - 200 + 150 * counter), (float)(HEIGHT / 2 - 50)};
+            }
+
+
             counter++;
         }
     }
@@ -1103,6 +1167,76 @@ void GraphicsHandler::buttonManage(Button* button)
         }
     }
     
+    if (button->text == "DAMAGE")
+    {
+        int i = 1;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            if (i < 5)
+            {
+                (*it)->visible = true;
+            }
+            else
+            {
+                (*it)->visible = false;
+            }
+            i++;
+        }
+
+        if(((*(this->passedLvls))[this->curLvl]) == false)
+        {
+            this->linkedTracker->AT_BUFFS++;
+            ((*(this->passedLvls))[this->curLvl]) = true;
+        }
+    }
+
+    if (button->text == "HEALTH")
+    {
+        int i = 1;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            if (i < 5)
+            {
+                (*it)->visible = true;
+            }
+            else
+            {
+                (*it)->visible = false;
+            }
+            i++;
+        }
+
+        if(((*(this->passedLvls))[this->curLvl]) == false)
+        {
+            this->linkedTracker->HP_BUFFS++;
+            ((*(this->passedLvls))[this->curLvl]) = true;
+        }
+    }
+
+    if (button->text == "SHIELD")
+    {
+        int i = 1;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            if (i < 5)
+            {
+                (*it)->visible = true;
+            }
+            else
+            {
+                (*it)->visible = false;
+            }
+            i++;
+        }
+
+        if(((*(this->passedLvls))[this->curLvl]) == false)
+        {
+            this->linkedTracker->SH_BUFFS++;
+            ((*(this->passedLvls))[this->curLvl]) = true;
+        }
+        
+    }
+
     if (button->text == "QUIT")
     {
         exit(0);
@@ -1117,7 +1251,22 @@ bool GraphicsHandler::checkPulse()
 void GraphicsHandler::flagTheStart()
 {
     this->startFlag = true;
+    this->victoryFlag = false;
 }
+
+
+bool GraphicsHandler::checkVictory()
+{
+    return this->victoryFlag;
+}
+
+
+
+void GraphicsHandler::setCurLvl(const uint lvl)
+{
+    this->curLvl = lvl;
+}
+
 
 
 void GraphicsHandler::run()
@@ -1210,6 +1359,12 @@ void GraphicsHandler::run()
                 DrawText(("BLOCK Y: " + std::to_string(
                     (int)(this->activeCamera.target.y / 200) - boost_y
                 )).c_str(), 10, 138, 32, GREEN);
+
+                DrawText(("ENEMIES: " + std::to_string(
+                    this->enemyNum)).c_str(), 10, HEIGHT - 42, 32, RED);
+                if (this->enemyNum == 0)
+                    DrawText("PRESS SPACE TO EXIT LEVEL", WIDTH / 2 - 200, 
+                        HEIGHT / 2 + 200, 42, WHITE);
             }
 
         }

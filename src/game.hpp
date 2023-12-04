@@ -29,6 +29,12 @@ class Game
         uint starNum = 0;
 
 
+        ProgressTrack pTrack;
+
+        uint levelLaunched;
+
+        std::vector<bool> levelsPassed;
+
         void loadTextures();
 
         void loadSounds();

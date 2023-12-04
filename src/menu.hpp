@@ -24,6 +24,10 @@ class Menu
 
         void defaultAllButtons();
 
+        void displayUpgrades();
+
+        void upgradeMenu();
+
     private:
 
         bool inGame = false;

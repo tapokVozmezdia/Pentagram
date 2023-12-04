@@ -41,12 +41,22 @@ Game::~Game()
 
 void Game::run()
 {
+    for (int i = 0; i < 4; ++i)
+        this->levelsPassed.push_back(false);
+
+
     this->loadTextures();
     this->loadSounds();
+
+    
+    this->graphics.linkProgressTracker(&(this->pTrack), &(this->levelsPassed));
 
 
     this->audio.playAmbient("menumusic.mp3", 0.5);
     this->audio.setCombatMusic("track2.mp3", 0.5);
+
+
+    //this->menu.displayUpgrades();
 
 
     while(!WindowShouldClose())
@@ -54,12 +64,24 @@ void Game::run()
         if (this->menu.actOneInitiated(&(this->graphics)))
         {
             // std::cout << "MOGUS MOGUS MOGUS" << std::endl;
+
+
+
+            this->levelLaunched = 1;
+
+            this->graphics.setCurLvl(1);
+
             this->actOne();
         }
 
         if (this->menu.actTwoInitiated(&(this->graphics)))
         {
             // std::cout << "MOGUS MOGUS MOGUS" << std::endl;
+
+
+
+            this->levelLaunched = 2;
+            this->graphics.setCurLvl(2);
             this->actTwo();
         }
 
@@ -77,11 +99,21 @@ void Game::run()
             }
         }
 
-        if (this->menu.gameEnded() && this->menu.menuInGameFlag())
+        if (this->menu.gameEnded() && this->menu.menuInGameFlag()
+            && !this->graphics.checkVictory())
         {
             this->audio.stopAmbient();
             this->audio.playAmbient("menumusic.mp3", 0.5);
             this->menu.defaultAllButtons();
+            this->objectNameMap.clear();
+            starNum = 0;
+        }
+
+        if (this->graphics.checkVictory() && this->menu.menuInGameFlag())
+        {
+            this->audio.stopAmbient();
+            this->audio.playAmbient("menumusic.mp3", 0.5);
+            this->menu.displayUpgrades();
             this->objectNameMap.clear();
             starNum = 0;
         }
@@ -99,7 +131,10 @@ void Game::run()
 
 void Game::makeCharacter(const int x, const int y)
 {
-    llint mc_id = (this->graphics.spawnEntity("robot.png", x - 100, y - 100, 12, 400, Team::MAIN));
+    // def dmg = 12
+    llint mc_id = (this->graphics.spawnEntity("robot.png", x - 100, y - 100, 
+        12 + this->pTrack.AT_BUFFS * AT_BUFF, 
+        400 + this->pTrack.HP_BUFFS * HP_BUFF, Team::MAIN));
     this->objectNameMap["MC"] = mc_id;
     // std::cout << "mc_id: " << std::endl;
     // std::cout << mc_id << std::endl;
@@ -958,10 +993,10 @@ void Game::actOne()
     this->makeHeal(49, 8);
     this->makeHeal(49, 9);
 
-    this->spawnCrawler(54, 9);
-
     //Traps & heals before, enemies after
     this->makeCharacter(0, 0);
+
+    this->spawnCrawler(54, 9);
 
     this->makeEnemy(4, 0);
     this->makeEnemy(12, 2);
@@ -1117,7 +1152,35 @@ void Game::actTwo()
     this->makeCharacter(0, 0);
 
 
-    this->spawnCrawler(8, 0);
+    this->makeEnemy(8, -2);
+    this->makeEnemy(8, -2);
+    this->makeEnemy(8, 2);
+    this->makeEnemy(8, 2);
+
+    this->makeEnemy(8, -8);
+    this->makeEnemy(8, -8);
+
+    this->makeEnemy(13, -8);
+    this->makeEnemy(13, -8);
+
+    for (int i = 0; i < 10; ++i)
+        this->makeEnemy(18, -5);
+    
+    this->spawnCrawler(18, -5);
+
+    for (int i = 0; i < 4; ++i)
+        this->spawnCrawler(27, -10);
+
+    for (int i = 0; i < 6; ++i)
+        this->makeEnemy(22, -6);
+
+    for (int i = 0; i < 4; ++i)
+        this->makeEnemy(12, 4);
+    
+    for (int i = 0; i < 8; ++i)
+        this->makeEnemy(12, 8);
+
+    this->spawnCrawler(12, 8);
 
 
 

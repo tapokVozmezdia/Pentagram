@@ -13,6 +13,8 @@ class GraphicsHandler
 
         void linkAudio(AudioHandler* audio_ptr);
 
+        void linkProgressTracker(ProgressTrack* tracker, std::vector<bool>* lvls);
+
         // Loads a texture from a specific folder by image name
         void loadTextureFromImage(const std::string& imgName); // Custom method, don't raylib one!!!
 
@@ -94,10 +96,14 @@ class GraphicsHandler
         void perform();
 
         void flagTheStart();
+        void flagVictory();
 
         // Returns false in the camera center is lost, else true
         bool checkPulse(); 
 
+        bool checkVictory();
+
+        void setCurLvl(const uint lvl);
 
     private:
 
@@ -128,14 +134,22 @@ class GraphicsHandler
 
         llint shieldTimer = 0;
 
+        int enemyNum = 0;
 
         bool buttonFlag = false;
 
         bool startFlag = false;
 
+        bool victoryFlag = false;
+
         Tint curTint = DEFAULT_TINT;
         
         Button* buttonPressed = nullptr;
+
+        ProgressTrack* linkedTracker = nullptr;
+        std::vector<bool>* passedLvls = nullptr;
+
+        uint curLvl;
 
         std::list<Button*> buttonList;
         std::list<GameObject*> objectList;

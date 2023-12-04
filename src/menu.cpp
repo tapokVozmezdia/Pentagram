@@ -15,6 +15,28 @@ void Menu::linkMenu(GraphicsHandler* graphics)
     this->buttons.push_back({IdCounter::getFreeId(), "LEVEL 4", false});
     this->buttons.push_back({IdCounter::getFreeId(), "BACK", false});
 
+    Button u1{IdCounter::getFreeId(), "DAMAGE", false};
+    Button u2{IdCounter::getFreeId(), "HEALTH", false};
+    Button u3{IdCounter::getFreeId(), "SHIELD", false};
+    
+    u1.isUpgrade = true;
+    u2.isUpgrade = true;
+    u3.isUpgrade = true;
+    u1.upgradeText = "Gives +" + std::to_string(AT_BUFF) + " dmg";
+    u2.upgradeText = "Gives +" + std::to_string(HP_BUFF) + " hp";
+    u3.upgradeText = "Gives +" + std::to_string(SH_BUFF) + " shield";
+
+    u1.height = 100;
+    u1.width = 100;
+    u2.height = 100;
+    u2.width = 100;
+    u3.height = 100;
+    u3.width = 100;
+
+    this->buttons.push_back(u1);
+    this->buttons.push_back(u2);
+    this->buttons.push_back(u3);
+
     
     this->defaultButtons = this->buttons;
 
@@ -88,4 +110,25 @@ void Menu::defaultAllButtons()
         jt++;
     }
     this->linkedGraphics->clearAll();
+}
+
+void Menu::upgradeMenu()
+{
+    this->linkedGraphics->drawButtons();
+}
+
+void Menu::displayUpgrades()
+{
+    this->defaultAllButtons();
+
+    auto it = this->buttons.begin();
+    for (int i = 0; i < this->buttons.size(); ++i)
+    {
+        if (i < this->buttons.size() - 3)
+            (*it).visible = false;
+        else
+            (*it).visible = true;
+        
+        it++;
+    }
 }
