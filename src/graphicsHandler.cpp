@@ -153,6 +153,7 @@ llint GraphicsHandler::spawnEntity(const std::string& txtr, int p_x, int p_y, do
 void GraphicsHandler::makeFloorFromObj(llint t_id)
 {
     this->objectMap[t_id]->floor = true;
+    this->objectMap[t_id]->specialTint = this->curTint;
 }
 
 
@@ -174,6 +175,14 @@ void GraphicsHandler::setHitbox(llint t_id, const int width, const int height)
     if (this->objectMap[t_id]->nL == false)
         throw std::logic_error("Trying to set a hitbox for a non-entity object");
     ((Entity*)(this->objectMap[t_id]))->hitbox = {width, height};
+}
+
+
+
+void GraphicsHandler::setFlips(const llint t_id, const Flipper& fl)
+{
+    this->objectMap[t_id]->flips.horz = fl.horz;
+    this->objectMap[t_id]->flips.vert = fl.vert;
 }
 
 
@@ -209,7 +218,10 @@ void GraphicsHandler::timedTrapFromEntity(const llint object_id)
     this->enemyNum--;
 }
 
-
+void GraphicsHandler::setSpecialTint(const llint object_id, const Tint& tint)
+{
+    this->objectMap[object_id]->specialTint = tint;
+}
 
 void GraphicsHandler::makeEnemyRanged(const llint t_id, const Animation& flight, const Animation& hit,
     int dmge, double speed, double rate, double rng)
@@ -993,12 +1005,6 @@ void GraphicsHandler::enemyHostile(Entity* i, Entity* j)
         throw std::logic_error("Non entity given into enemyHostile method");
     }
 
-    if (j->rangedProfile != nullptr)
-    {
-        this->checkRangedEnemy(j, i);
-        return;
-    }
-
     bool makeNoise = false;
     double nse = GetRandomValue(0, 10000);
     nse /= 10000;
@@ -1032,6 +1038,12 @@ void GraphicsHandler::enemyHostile(Entity* i, Entity* j)
         this->moveTextureDelta(j->objectId, 0, j->momentum.y);
 
         j->noise += 1;
+    }
+
+    if (j->rangedProfile != nullptr)
+    {
+        this->checkRangedEnemy(j, i);
+        return;
     }
 
     if (sqrt(((c_i.x - c_j.x) * (c_i.x - c_j.x))
@@ -1186,10 +1198,11 @@ void GraphicsHandler::checkRangedEnemy(Entity* enemy, Entity* player)
         ObjectHandler::getCenter(player)
     );
 
-    if (dist <= ENEMY_VISIBILITY)
+    if (dist <= enemy->rangedProfile->range * (float)ENEMY_VISIBILITY)
     {
         this->audio->triggerCombatMusic();
-        if (dist > ENEMY_VISIBILITY - 150)
+        if (dist > enemy->rangedProfile->range 
+            * (float)ENEMY_VISIBILITY - 150)
         {
             this->moveTextureDelta(
                 enemy->objectId,
@@ -1215,24 +1228,26 @@ void GraphicsHandler::checkRangedEnemy(Entity* enemy, Entity* player)
                 )
             );
         }
-
-        if (enemy->rangedProfile->rangedTimer 
-            >= enemy->rangedProfile->fireRate * (double)FPS)
+        if (dist >= 150)
         {
-            enemy->rangedProfile->rangedTimer = 0;
-            this->fireProjectile(
-                *(enemy->rangedProfile->flightAnim->textureNames.begin()),
-                ObjectHandler::getCenter(enemy),
-                ObjectHandler::getCenter(player),
-                enemy->rangedProfile->dmg,
-                enemy->rangedProfile->projSpeed,
-                *(enemy->rangedProfile->flightAnim),
-                *(enemy->rangedProfile->hitAnim)
-            );
-        }
-        else
-        {
-            enemy->rangedProfile->rangedTimer++;
+            if (enemy->rangedProfile->rangedTimer 
+                >= enemy->rangedProfile->fireRate * (double)FPS)
+            {
+                enemy->rangedProfile->rangedTimer = 0;
+                this->fireProjectile(
+                    *(enemy->rangedProfile->flightAnim->textureNames.begin()),
+                    ObjectHandler::getCenter(enemy),
+                    ObjectHandler::getCenter(player),
+                    enemy->rangedProfile->dmg,
+                    enemy->rangedProfile->projSpeed,
+                    *(enemy->rangedProfile->flightAnim),
+                    *(enemy->rangedProfile->hitAnim)
+                );
+            }
+            else
+            {
+                enemy->rangedProfile->rangedTimer++;
+            }
         }
     }
 }
@@ -1552,13 +1567,12 @@ void GraphicsHandler::run()
                             flipped *= -1;
                         
                         
-                        Color col = enumHandler::tintToColor(DEFAULT_TINT);
+                        Color col = enumHandler::tintToColor(i->specialTint);
 
-                        if ((i->floor))
-                            col = enumHandler::tintToColor(this->curTint);
-
-
-                        DrawTextureRec(*(i->texture), {0, 0, (float)flipped*(i->texture)->width,(float)(i->texture)->height}, {i->coordinates.x, i->coordinates.y}, col);
+                        DrawTextureRec(*(i->texture), {0, 0,
+                        (float)(i->flips).horz * (float)flipped*(i->texture)->width,
+                        (float)(i->flips).vert * (float)(i->texture)->height}, 
+                        {i->coordinates.x, i->coordinates.y}, col);
                     }
 
                 EndMode2D();

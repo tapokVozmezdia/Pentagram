@@ -148,7 +148,8 @@ typedef enum
     RED_TINT,
     YELLOW_TINT,
     GREEN_TINT,
-    BLUE_TINT
+    BLUE_TINT,
+    LIGHTRED_TINT
 } Tint;
 
 
@@ -229,6 +230,13 @@ struct ProjectileHitProfile
 }; 
 
 
+struct Flipper
+{
+    int horz = 1;
+    int vert = 1;
+};
+
+
 // Basic Game Object type
 struct GameObject
 {
@@ -246,6 +254,9 @@ struct GameObject
     bool mark = false;
     bool isFlipped = false;
     uint EXTRA = 0;
+
+    Tint specialTint = DEFAULT_TINT;
+    Flipper flips;
 
     std::unique_ptr<ProjectileHitProfile> hitProfile = nullptr;
 };

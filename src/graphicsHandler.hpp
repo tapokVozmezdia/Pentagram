@@ -41,6 +41,9 @@ class GraphicsHandler
         void setHitbox(llint t_id, const int width, const int height);
 
 
+        void setFlips(const llint t_id, const Flipper& fl);
+
+
         //Transforms a GameObject into a wall
         void wallFromObject(const llint object_id);
 
@@ -49,7 +52,7 @@ class GraphicsHandler
 
         void timedTrapFromEntity(const llint object_id);
 
-
+        void setSpecialTint(const llint object_id, const Tint& tint);
 
         void makeEnemyRanged(const llint t_id, const Animation& flight, const Animation& hit,
             int dmge, double speed, double rate, double rng);

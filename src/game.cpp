@@ -55,7 +55,7 @@ void Game::run()
     this->audio.playAmbient("menumusic.mp3", 0.5);
     this->audio.setCombatMusic("track2.mp3", 0.5);
 
-    // this->graphics.enemyHostilityTriggerOff(); // FOR LEVEL-DESIGN PURPOSES
+    //this->graphics.enemyHostilityTriggerOff(); // FOR LEVEL-DESIGN PURPOSES
 
     //this->menu.displayUpgrades();
 
@@ -430,6 +430,36 @@ void Game::spawnCrawler(int x, int y)
     this->graphics.setHitbox(enemy_id, {125, 125});
 }
 
+
+void Game::spawnRangedCrawler(int x, int y)
+{
+    this->spawnCrawler(x, y);
+    this->graphics.setSpecialTint(this->graphics.getLastId(), LIGHTRED_TINT);
+    
+    Animation a1, a2;
+
+    for (int i = 1; i <= 5; ++i)
+    {
+        a1.textures.push_back(this->graphics.getTexture("energy_ball" + std::to_string(i) + ".png"));
+        a1.textureNames.push_back("energy_ball" + std::to_string(i) + ".png");
+        a1.timeQueues.push_back(0.05);
+    }
+
+    for (int i = 1; i <= 9; ++i)
+    {
+        a2.textures.push_back(this->graphics.getTexture("eb_exp" + std::to_string(i) + ".png"));
+        a2.textureNames.push_back("eb_exp" + std::to_string(i) + ".png");
+        if (i != 9)
+            a2.timeQueues.push_back(0.03);
+    }
+    a2.timeQueues.push_back(2);
+    
+    this->graphics.makeEnemyRanged(this->graphics.getLastId(),
+        a1, a2, 25, 1.5, 0.5, 1.5
+    );
+}
+
+
 void Game::makeTrap(int x, int y)
 {
     x = x * 200;
@@ -582,6 +612,31 @@ void Game::makeWall(const int x, const int y)
     this->objectNameMap["wall" + std::to_string(wall_id)] = wall_id;
 
     this->graphics.wallFromObject(wall_id);
+}
+
+// USES ABSOLUTE COORDINATES
+void Game::makeCasm(const int x, const int y, const Directions& dirs, 
+    const Tint& tint)
+{
+
+    llint casm_id = (this->graphics.spawnTexture("fall_"
+    + std::to_string((int)dirs.left)
+    + std::to_string((int)dirs.down)
+    + std::to_string((int)dirs.right)
+    + std::to_string((int)dirs.top) +
+    ".png", x, y));
+    this->objectNameMap["casm" + std::to_string(casm_id)] = casm_id;
+
+    this->graphics.setSpecialTint(casm_id, tint);
+
+    this->graphics.wallFromObject(casm_id);
+}
+
+// USES BLOCK COORDINATES
+void Game::createCasm(int x, int y, const Directions& dirs, 
+    const Tint& tint)
+{
+    this->makeCasm(x * 200, y * 200, dirs, tint);
 }
 
 
@@ -818,6 +873,66 @@ void Game::createHallway(int x, int y, const SingularDirection dir, const uint w
     }
 }
 
+
+
+void Game::createCasmRoom(int x, int y, const int wdth, 
+    const int hgth, const Directions& exits, const Tint& tint)
+{
+    x = x * 200;
+    y = y * 200;
+
+    if (wdth == 0 || hgth == 0)
+    {
+        throw std::logic_error("Trying to create a zero-size room");
+    }
+
+    for (int i = 0; i < hgth; ++i)
+    {
+        for (int j = 0; j < wdth; ++j)
+        {
+            this->makeFloor(x + (j * 200), y + (i * 200));
+        
+            if (i == 0)
+            {
+                if (!(exits.top && (
+                    (wdth % 2 == 1 && j == wdth / 2) 
+                    || (wdth % 2 == 0 && (j == wdth / 2 || j == wdth / 2 - 1))
+                    )))
+                    this->makeCasm(x + (j * 200), y - 200, {0,1,0,1}, tint);
+                else
+                    this->makeFloor(x + (j * 200), y - 200);
+                if (!(exits.down && (
+                    (wdth % 2 == 1 && j == wdth / 2) 
+                    || (wdth % 2 == 0 && (j == wdth / 2 || j == wdth / 2 - 1))
+                    )))
+                    this->makeCasm(x + (j * 200), y + (hgth * 200), {0,1,0,1}, tint);
+                else
+                    this->makeFloor(x + (j * 200), y + (hgth * 200));
+            }
+        }
+        if (!(exits.left && (
+            (hgth % 2 == 1 && i == hgth / 2) 
+            || (hgth % 2 == 0 && (i == hgth / 2 || i == hgth / 2 - 1))
+            )))
+            this->makeCasm(x - 200, y + (i * 200), {1,0,1,0}, tint);
+        else
+            this->makeFloor(x - 200, y + (i * 200));
+        if (!(exits.right && (
+            (hgth % 2 == 1 && i == hgth / 2) 
+            || (hgth % 2 == 0 && (i == hgth / 2 || i == hgth / 2 - 1))
+            )))
+            this->makeCasm(x + (wdth * 200), y + (i * 200), {1,0,1,0}, tint);
+        else
+            this->makeFloor(x + (wdth * 200), y + (i * 200));
+    }
+    this->makeCasm(x - 200, y - 200, {1,0,0,1}, tint);
+    this->makeCasm(x - 200, y + (hgth * 200), {1,1,0,0}, tint);
+    this->makeCasm(x + (wdth * 200), y - 200, {0,0,1,1}, tint);
+    this->makeCasm(x + (wdth * 200), y + (hgth * 200), {0,1,1,0}, tint);
+}
+
+
+
 void Game::loadTextures()
 {
     this->graphics.loadTextureFromImage("robot.png");
@@ -890,6 +1005,20 @@ void Game::loadTextures()
     
         this->graphics.loadTextureFromImage("ntrap" + std::to_string(i) + ".png");
     }
+
+
+    for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 2; ++j)
+            for (int k = 0; k < 2; ++k)
+                for (int n = 0; n < 2; ++n)
+                    this->graphics.loadTextureFromImage(
+                        "fall_" 
+                        + std::to_string(i) 
+                        + std::to_string(j) 
+                        + std::to_string(k) 
+                        + std::to_string(n)
+                        + ".png"
+                    );
 }
 
 
@@ -1194,9 +1323,12 @@ void Game::actTwo()
 
     this->createRoom(21, 34, 6, 6, {0, 0, 0, 1});
 
-    this->createRoom(28, 22, 3, 5, {0, 0, 1, 0});
-
-    this->createRoom(35, 22, 3, 5, {1, 0, 0, 0});
+    this->createCasmRoom(28, 22, 3, 5, {0, 0, 0, 1}, RED_TINT);
+    this->createCasm(30, 21, {1,1,0,1}, RED_TINT);
+    this->createCasm(28, 21, {0,1,1,1}, RED_TINT);
+    this->createCasmRoom(35, 22, 3, 5, {0, 0, 0, 1}, RED_TINT);
+    this->createCasm(37, 21, {1,1,0,1}, RED_TINT);
+    this->createCasm(35, 21, {0,1,1,1}, RED_TINT);
 
     //this->createRoom(32, 18, 2, 2, {1, 1, 0, 0});
 
@@ -1315,10 +1447,17 @@ void Game::actTwo()
 
     this->spawnCrawler(12, 8);
 
+    this->spawnRangedCrawler(30, 26);
+    this->spawnRangedCrawler(30, 26);
+
+    this->spawnRangedCrawler(35, 26);
+    this->spawnRangedCrawler(35, 26);
 
     // this->spawnCrawler(8, 0); // testing
 
     // auto id = this->graphics.getLastId();
+
+    // this->graphics.setSpecialTint(id, BLUE_TINT);
 
     // Animation a1, a2;
 
