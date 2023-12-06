@@ -83,7 +83,7 @@ void Controls::attackRMC(const llint t_id, GraphicsHandler* graphics)
     if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
 
-        graphics->fireTestProjectileFromObj(t_id);
+        // graphics->fireTestProjectileFromObj(t_id);
 
         // Animation at;
 

@@ -91,7 +91,7 @@ void Game::run()
         {
             Controls::moveWASD(this->objectNameMap["MC"], &(this->graphics));
             Controls::attackLMC(this->objectNameMap["MC"], &(this->graphics));
-            Controls::attackRMC(this->objectNameMap["MC"], &(this->graphics));
+            // Controls::attackRMC(this->objectNameMap["MC"], &(this->graphics));
 
             for (int i = 0; i < this->starNum; ++i)
             {
