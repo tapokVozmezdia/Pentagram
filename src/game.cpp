@@ -1340,8 +1340,8 @@ void Game::actTwo()
 
     // this->graphics.makeEnemyRanged(id, a1, a2, 100, 1, 1, 0);
 
-    for (int i = 0; i < 100; ++i)
-        this->spawnCrawler(8, 0);
+    // for (int i = 0; i < 100; ++i)
+    //     this->spawnCrawler(8, 0);
 
 
     // this->launchEnergyBall(0, 0, 200, 200);
