@@ -39,6 +39,11 @@ void GraphicsHandler::linkAudio(AudioHandler* audio_ptr)
 }
 
 
+void GraphicsHandler::syncAudio()
+{
+    this->audio->linkCameraTarger(this->cameraTarget);
+}
+
 
 void GraphicsHandler::linkProgressTracker(ProgressTrack* tracker, std::vector<bool>* lvls)
 {
@@ -192,6 +197,47 @@ void GraphicsHandler::trapFromEntity(const llint object_id)
     this->enemyNum--;
 }
 
+void GraphicsHandler::timedTrapFromEntity(const llint object_id)
+{
+    if (this->objectMap[object_id]->nL == false)
+    {
+        throw std::logic_error("Non-entity id was ginven into timedTrapFromEntity func");
+    }
+    ((Entity*)(this->objectMap[object_id]))->isTrap = true;
+    ((Entity*)(this->objectMap[object_id]))->isTimedTrap = true;
+
+    this->enemyNum--;
+}
+
+
+
+void GraphicsHandler::makeEnemyRanged(const llint t_id, const Animation& flight, const Animation& hit,
+    int dmge, double speed, double rate, double rng)
+{
+    if (!(this->objectMap[t_id]->nL))
+    {
+        throw std::logic_error("Trying to make ranged attacker from non-entity");
+    }
+
+    if (((Entity*)(this->objectMap[t_id]))->rangedProfile != nullptr)
+    {
+        std::cout << "WARNING: making ranged enemy from already ranged entity" << std::endl;
+    }
+
+    ((Entity*)(this->objectMap[t_id]))->rangedProfile = 
+    std::make_unique<RangedEntityProfile>();
+    ((Entity*)(this->objectMap[t_id]))->rangedProfile->dmg = dmge;
+    ((Entity*)(this->objectMap[t_id]))->rangedProfile->projSpeed = speed;
+    ((Entity*)(this->objectMap[t_id]))->rangedProfile->fireRate = rate;
+    ((Entity*)(this->objectMap[t_id]))->rangedProfile->range = rng;
+
+    ((Entity*)(this->objectMap[t_id]))->rangedProfile->flightAnim 
+        = std::make_shared<Animation>(flight);
+    ((Entity*)(this->objectMap[t_id]))->rangedProfile->hitAnim 
+        = std::make_shared<Animation>(hit);
+}
+
+
 
 void GraphicsHandler::deleteTexture(const llint object_id)
 {
@@ -275,7 +321,12 @@ llint GraphicsHandler::fireProjectile(const std::string& txtr, const Vector2& sr
 
     pr->animation = std::make_shared<Animation>(flight);
     pr->hitAnimation = std::make_shared<Animation>(hit);
+
+    pr->animation->firstTexture = *(pr->animation->textures.begin());
+    pr->hitAnimation->firstTexture = *(pr->hitAnimation->textures.begin());
+
     pr->texture = &(this->textureMap[txtr]);
+    pr->textureName = txtr;
     pr->coordinates.x = src.x;
     pr->coordinates.y = src.y;
     pr->target.x = trgt.x;
@@ -290,6 +341,43 @@ llint GraphicsHandler::fireProjectile(const std::string& txtr, const Vector2& sr
     this->objectList.push_back(pr);
     this->objectMap[this->objectList.back()->objectId] = (this->objectList.back());
     return this->objectList.back()->objectId;
+}
+
+
+llint GraphicsHandler::fireTestProjectileFromObj(const llint t_id)
+{
+    Animation a1, a2;
+
+    for (int i = 1; i <= 5; ++i)
+    {
+        a1.textures.push_back(this->getTexture("energy_ball" + std::to_string(i) + ".png"));
+        a1.textureNames.push_back("energy_ball" + std::to_string(i) + ".png");
+        a1.timeQueues.push_back(0.05);
+    }
+
+    for (int i = 1; i <= 9; ++i)
+    {
+        a2.textures.push_back(this->getTexture("eb_exp" + std::to_string(i) + ".png"));
+        a2.textureNames.push_back("eb_exp" + std::to_string(i) + ".png");
+        if (i != 9)
+            a2.timeQueues.push_back(0.03);
+    }
+    a2.timeQueues.push_back(2);
+
+    // std::cout << ObjectHandler::getCenter(this->objectMap[t_id]).x << " "
+    //     << ObjectHandler::getCenter(this->objectMap[t_id]).y << std::endl;
+
+    // std::cout << ObjectHandler::getCenter(this->objectMap[t_id]).x + 400 << " "
+    //     << ObjectHandler::getCenter(this->objectMap[t_id]).y << std::endl;
+
+    return 
+    
+    this->fireProjectile("energy_ball1.png", 
+        ObjectHandler::getCenter(this->objectMap[t_id]),
+        {ObjectHandler::getCenter(this->objectMap[t_id]).x + 400, 
+        ObjectHandler::getCenter(this->objectMap[t_id]).y},
+        20, 1, a1, a2
+    );
 }
 
 
@@ -339,14 +427,17 @@ void GraphicsHandler::moveTextureDelta(const llint t_id, float dx, float dy)
     }
     // w_y = this->objectMap[t_id]->coordinates.y + dy;
 
-    for (auto ind : this->wallIndexList)
+    if (this->objectMap[t_id]->nL)
     {
-        if ((w_x < (this->objectMap[ind]->coordinates.x + this->objectMap[ind]->texture->width) 
-        && w_x + ((Entity*)(this->objectMap[t_id]))->hitbox.width > this->objectMap[ind]->coordinates.x 
-        && w_y < (this->objectMap[ind]->coordinates.y + this->objectMap[ind]->texture->height) 
-        && w_y + ((Entity*)(this->objectMap[t_id]))->hitbox.height > this->objectMap[ind]->coordinates.y))
+        for (auto ind : this->wallIndexList)
         {
-            return;
+            if ((w_x < (this->objectMap[ind]->coordinates.x + this->objectMap[ind]->texture->width) 
+            && w_x + ((Entity*)(this->objectMap[t_id]))->hitbox.width > this->objectMap[ind]->coordinates.x 
+            && w_y < (this->objectMap[ind]->coordinates.y + this->objectMap[ind]->texture->height) 
+            && w_y + ((Entity*)(this->objectMap[t_id]))->hitbox.height > this->objectMap[ind]->coordinates.y))
+            {
+                return;
+            }
         }
     }
 
@@ -401,6 +492,7 @@ void GraphicsHandler::flipTexture(const llint t_id)
 void GraphicsHandler::playAnimationOnce(const Vector2& pos, const Animation& anim)
 {
     llint anim_id = this->spawnTexture("collision.png", pos);
+    // std::cout << anim_id << std::endl;
     this->animateTexture(anim_id, anim);
     this->objectMap[anim_id]->mark = true;
 }
@@ -411,6 +503,8 @@ void GraphicsHandler::centerCamera(llint t_id)
 {
     this->cameraTarget = &(this->objectMap[t_id]->coordinates);
     this->targetId = t_id;
+
+    // this->activeCamera.zoom = 0.4f; // FOR LEVEL-DESIGN PURPOSES
 
     if (this->objectMap[t_id]->nL)
     {
@@ -444,6 +538,7 @@ void GraphicsHandler::perform()
 
 
 
+
 void GraphicsHandler::collisionCheck()
 {
     for (auto i = this->objectList.begin(); i != this->objectList.end(); ++i)
@@ -459,6 +554,9 @@ void GraphicsHandler::collisionCheck()
             if ((*j)->floor || (*j)->isWall)
                 continue;
 
+            if ((*i)->nLP && (*j)->nLP)
+                continue;
+
             // std::cout << "\tCOORD1\t COORD2\n" << 
             //     "\t" << (**j).coordinates.x << "\t" << (**j).coordinates.y <<
             //     "\n\t" << (**i).coordinates.x << "\t" << (**i).coordinates.y << "\n";
@@ -471,7 +569,28 @@ void GraphicsHandler::collisionCheck()
                 this->objectMap[(**i).objectId]->collision = true;
                 this->objectMap[(**j).objectId]->collision = true;
 
-                this->fightCheck(*i, *j);
+                if ((*i)->nL && (*j)->nL)
+                {
+                    this->fightCheck(*i, *j);
+                    continue;
+                }
+
+                if ((*i)->nL && (*j)->hitProfile != nullptr)
+                {
+                    if (!((Entity*)(*i))->isTrap)
+                    this->projectileHit(
+                        (Entity*)(*i),
+                        (*j)
+                    );
+                }
+                else if ((*j)->nL && (*i)->hitProfile != nullptr)
+                {
+                    if (!((Entity*)(*j))->isTrap)
+                    this->projectileHit(
+                        (Entity*)(*j),
+                        (*i)
+                    );
+                }
             } 
         }
     }
@@ -534,47 +653,85 @@ void GraphicsHandler::animationCheck()
             if ((*i)->EXTRA >= (*i)->animation->timeQueues.size())
             {
                 // std::cout << "<N>UST" << std::endl;
-                this->deleteTexture((*i)->objectId);
+                this->toDeleteList.push_back((*i)->objectId);
             }
             continue;
         }
 
+
+        // AMOGUS
+        // AMOGUS
+        // AMOGUS
+        // AMOGUS
+        // AMOGUS
+        // AMOGUS
+
+
         if((*i)->nLP == true) // For projectiles
         {
-            // if (((Projectile*)(*i))->exploded)
-            // {
-            //     llint tmp_id = this->spawnTexture(
-            //     *(((Projectile*)(*i))->hitAnimation->textureNames.begin()), 
-            //     (*i)->coordinates
-            //     );
+            // std::cout << "DEBUG1" << std::endl;
+            if (ObjectHandler::measureDistance(
+                    ((Projectile*)(*i))->target,
+                    ObjectHandler::getCenter((*i))
+                ) <= ((Projectile*)(*i))->speedModifier * PROJECTILE_SPEED)
+            {
+                this->playAnimationOnce({
+                            ((Projectile*)(*i))->target.x - 
+                            ((Projectile*)(*i))->hitAnimation->firstTexture->width / 2, 
+                            ((Projectile*)(*i))->target.y - 
+                            ((Projectile*)(*i))->hitAnimation->firstTexture->height / 2
+                        }, 
+                        *(((Projectile*)(*i))->hitAnimation)
+                    );
+                // std::cout << this->getLastId() << std::endl; // WORKS
+                
+                this->objectMap[this->getLastId()]->hitProfile
+                    = std::make_unique<ProjectileHitProfile>();
+                
+                this->objectMap[this->getLastId()]->hitProfile->damageOnHit = 
+                    ((Projectile*)(*i))->damage;
 
-            //     this->animateTexture(tmp_id, *(((Projectile*)(*i))->hitAnimation));
+                this->toDeleteList.push_back((*i)->objectId);
+                // continue;
+            }
 
-            //     this->objectMap[tmp_id]->mark = true;
+            else
+            {
+                this->moveTextureDelta((*i)->objectId,
+                    ObjectHandler::getVectorWithLength(
+                        ObjectHandler::getVectorDiff(
+                            ObjectHandler::getCenter((*i)),
+                            ((Projectile*)(*i))->target
+                        ), 
+                        ((Projectile*)(*i))->speedModifier * PROJECTILE_SPEED
+                    )
+                );
+            }
 
-            //     this->deleteTexture((*i)->objectId);
-            // }
-            // if ((ObjectHandler::measureDistance(
-            //     ObjectHandler::getCenter(*i), ((Projectile*)(*i))->target)
-            // ) <= ((Projectile*)(*i))->speedModifier * PROJECTILE_SPEED)
-            // {
-            //     this->moveTextureAbs((*i)->objectId, ((Projectile*)(*i))->target);
-            //     ((Projectile*)(*i))->exploded = true;
-            // }
-            // else
-            // {
-            //     auto tmp_vec = ObjectHandler::getVectorWithLength(
-            //         ObjectHandler::getVectorDiff(
-            //             ObjectHandler::getCenter(*i),
-            //             ((Projectile*)(*i))->target
-            //         ),
-            //         ((Projectile*)(*i))->speedModifier * PROJECTILE_SPEED
-            //     );
-            //     this->moveTextureDelta((*i)->objectId, tmp_vec);
-            //     // std::cout << "MUST MOVE ENERGY BALL: " << tmp_vec.x << " " << tmp_vec.y << std::endl;
-            // }
+            if ((*i)->animation->curTime >= (FPS * ((*i)->animation->timeQueues[0])))
+            {
+                ContainerHandler::shiftListL(&((*i)->animation->textures));
+                ContainerHandler::shiftListL(&((*i)->animation->textureNames));
+                ContainerHandler::shiftVectorL(&((*i)->animation->timeQueues));
+                (*i)->texture = *((*i)->animation->textures.begin());
+                (*i)->textureName = *((*i)->animation->textureNames.begin());
+                (*i)->animation->curTime = 0;
+                continue;
+            }
+
+            ((*i)->animation->curTime)++;
+
             continue;
         }
+
+
+        // AMOGUS
+        // AMOGUS
+        // AMOGUS
+        // AMOGUS
+        // AMOGUS
+        // AMOGUS
+
 
         //For entity
         if ((*i)->animation == nullptr)
@@ -656,17 +813,33 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
     if (this->objectMap[(*j).objectId]->nL == true 
                     && this->objectMap[(*i).objectId]->nL == true)
     {
-        if (((Entity*)(i))->isTrap == true 
+        if (((Entity*)(i))->isTrap
+            && ((Entity*)(j))->isTrap)
+        {
+            return;
+        }
+
+        if (((Entity*)(i))->isTrap
+            || ((Entity*)(j))->isTrap)
+        {
+            if(ObjectHandler::hitBoxCollided(((Entity*)(i)), ((Entity*)(j))) == false)
+            {
+                return;
+            }
+        }
+
+
+
+        if (((Entity*)(i))->isTrap == true && (((Entity*)(i))->isTimedTrap == false)
             && ((Entity*)(j))->isTrap == false)
         {
             this->triggerAttack(((Entity*)(i))->objectId);
         }
-        if (((Entity*)(j))->isTrap == true 
+        if (((Entity*)(j))->isTrap == true && (((Entity*)(j))->isTimedTrap == false)
         && ((Entity*)(i))->isTrap == false)
         {
             this->triggerAttack(((Entity*)(j))->objectId);
         }
-
 
         if ((((Entity*)(i))->isAttacking == true 
             && ((Entity*)(j))->isTrap == false) && 
@@ -808,6 +981,22 @@ void GraphicsHandler::enemyHostile()
                 continue;
             }
 
+            if (((Entity*)(*i))->rangedProfile != nullptr 
+                && ((Entity*)(*i))->team == HOSTILE 
+                && ((Entity*)(*j))->team == MAIN)
+            {
+                this->checkRangedEnemy((Entity*)(*i), (Entity*)(*j));
+                continue;
+            }
+
+            if (((Entity*)(*j))->rangedProfile != nullptr 
+                && ((Entity*)(*j))->team == HOSTILE
+                && ((Entity*)(*i))->team == MAIN)
+            {
+                this->checkRangedEnemy((Entity*)(*j), (Entity*)(*i));
+                continue;
+            }
+
             if (((Entity*)(*i))->team == ((Entity*)(*j))->team ||
                 ((Entity*)(*i))->team == NEUTRAL || ((Entity*)(*j))->team == NEUTRAL
                 || ((Entity*)(*i))->isTrap == true || ((Entity*)(*j))->isTrap == true)
@@ -944,7 +1133,6 @@ void GraphicsHandler::enemyHostile()
 
 void GraphicsHandler::afterFightCheck()
 {
-    std::list<llint> to_delete_list;
 
     for (auto it : objectList)
     {
@@ -959,7 +1147,11 @@ void GraphicsHandler::afterFightCheck()
                     this->enemyNum = 0;
                     this->audio->deathFlag();
                 }    
-                to_delete_list.push_back(it->objectId);
+                this->toDeleteList.push_back(it->objectId);
+            }
+            if (((Entity*)(it))->isTimedTrap && this->triggerTraps)
+            {
+                this->triggerAttack(it->objectId);
             }
         }
     }
@@ -997,10 +1189,13 @@ void GraphicsHandler::afterFightCheck()
     }
 
 
-    for (auto i : to_delete_list)
+    for (auto i : this->toDeleteList)
     {
         this->deleteTexture(i);
     }
+
+    this->toDeleteList.clear();
+
 
     if (this->cameraTarget != nullptr)
     {
@@ -1015,8 +1210,100 @@ void GraphicsHandler::afterFightCheck()
             }
         }
     }
+
+    if (this->trapTimer >= TRAP_CD * (float)FPS)
+    {
+        this->trapTimer = 0;
+        this->triggerTraps = true;
+    }
+    else
+    {
+        this->trapTimer++;
+        this->triggerTraps = false;
+    }
 }
 
+
+void GraphicsHandler::projectileHit(Entity* i, GameObject* j)
+{
+    if (j->EXTRA == 1 && !(j->hitProfile->hasHit))
+    {
+        if (i->curShield >= j->hitProfile->damageOnHit)
+        {
+            i->curShield -= j->hitProfile->damageOnHit;
+        }
+        else
+        {
+            i->curHP -= (j->hitProfile->damageOnHit - i->curShield);
+            i->curShield = 0;
+        }
+
+        (j->hitProfile->hasHit) = true;
+    }
+}
+
+
+void GraphicsHandler::checkRangedEnemy(Entity* enemy, Entity* player)
+{
+
+    if (enemy->rangedProfile == nullptr)
+        throw std::logic_error("Non ranged entity appeared in ranged check method");
+
+    auto dist = ObjectHandler::measureDistance(
+        ObjectHandler::getCenter(enemy),
+        ObjectHandler::getCenter(player)
+    );
+
+    if (dist <= ENEMY_VISIBILITY)
+    {
+        this->audio->triggerCombatMusic();
+        if (dist > ENEMY_VISIBILITY - 150)
+        {
+            this->moveTextureDelta(
+                enemy->objectId,
+                ObjectHandler::getVectorWithLength(
+                    ObjectHandler::getVectorDiff(
+                        ObjectHandler::getCenter(enemy),
+                        ObjectHandler::getCenter(player)
+                    ),
+                    ENEMY_SPEED
+                )
+            );
+        }
+        else if (dist < 200)
+        {
+            this->moveTextureDelta(
+                enemy->objectId,
+                ObjectHandler::getVectorWithLength(
+                    ObjectHandler::getVectorDiff(
+                        ObjectHandler::getCenter(player),
+                        ObjectHandler::getCenter(enemy)
+                    ),
+                    ENEMY_SPEED
+                )
+            );
+        }
+
+        if (enemy->rangedProfile->rangedTimer 
+            >= enemy->rangedProfile->fireRate * (double)FPS)
+        {
+            enemy->rangedProfile->rangedTimer = 0;
+            this->fireProjectile(
+                *(enemy->rangedProfile->flightAnim->textureNames.begin()),
+                ObjectHandler::getCenter(enemy),
+                ObjectHandler::getCenter(player),
+                enemy->rangedProfile->dmg,
+                enemy->rangedProfile->projSpeed,
+                *(enemy->rangedProfile->flightAnim),
+                *(enemy->rangedProfile->hitAnim)
+            );
+        }
+        else
+        {
+            enemy->rangedProfile->rangedTimer++;
+        }
+    }
+}
 
 
 void GraphicsHandler::drawButtons()

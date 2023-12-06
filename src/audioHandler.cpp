@@ -23,6 +23,13 @@ void AudioHandler::connectToGraphics(std::list<GameObject*>* objLst,
     this->objectMap = objMp;
 }
 
+
+void AudioHandler::linkCameraTarger(Vector2* trgt)
+{
+    this->recieverPos = trgt;
+}
+
+
 void AudioHandler::loadSoundByName(const std::string& sName)
 {
     Sound sound = LoadSound(("..\\assets\\audio\\" + sName).c_str());
@@ -100,7 +107,15 @@ void AudioHandler::soundCheck()
                         jt++;
                     }
                     //std::cout << *jt << std::endl;
-                    this->addToQueue(*jt, true, true);
+                    if (!(((Entity*)(*it))->isTimedTrap))
+                        this->addToQueue(*jt, true, true);
+                    else if (ObjectHandler::measureDistance(
+                        *(this->recieverPos), 
+                        ObjectHandler::getCenter((*it))
+                    ) <= 800)
+                    {
+                        this->addToQueue(*jt, true, true);
+                    }
                     //std::cout << "Tb| 6OT" << std::endl;
 
                     if (((Entity*)(*it))->didDamage == true && !(((Entity*)(*it))->animation->extraSound.empty()))

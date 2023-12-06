@@ -55,6 +55,7 @@ void Game::run()
     this->audio.playAmbient("menumusic.mp3", 0.5);
     this->audio.setCombatMusic("track2.mp3", 0.5);
 
+    // this->graphics.enemyHostilityTriggerOff(); // FOR LEVEL-DESIGN PURPOSES
 
     //this->menu.displayUpgrades();
 
@@ -65,13 +66,12 @@ void Game::run()
         {
             // std::cout << "MOGUS MOGUS MOGUS" << std::endl;
 
-
-
             this->levelLaunched = 1;
 
             this->graphics.setCurLvl(1);
 
             this->actOne();
+            this->graphics.syncAudio();
         }
 
         if (this->menu.actTwoInitiated(&(this->graphics)))
@@ -82,7 +82,9 @@ void Game::run()
 
             this->levelLaunched = 2;
             this->graphics.setCurLvl(2);
+
             this->actTwo();
+            this->graphics.syncAudio();
         }
 
         if (!(this->menu.isOn()) && !(this->menu.gameEnded()))
@@ -113,7 +115,10 @@ void Game::run()
         {
             this->audio.stopAmbient();
             this->audio.playAmbient("menumusic.mp3", 0.5);
-            this->menu.displayUpgrades();
+            if (!(this->levelsPassed[this->levelLaunched]))
+                this->menu.displayUpgrades();
+            else
+                this->menu.defaultAllButtons();
             this->objectNameMap.clear();
             starNum = 0;
         }
@@ -487,6 +492,50 @@ void Game::makeTrap(int x, int y)
 
 }
 
+void Game::makeTimedTrap(int x, int y)
+{
+    x = x * 200;
+    y = y * 200;
+
+    llint enemy_id = (this->graphics.spawnEntity("ntrap1.png", x, y, 200, 100, Team::HOSTILE));
+    this->objectNameMap["timedTrap" + std::to_string(enemy_id)] = enemy_id;
+    
+    this->graphics.timedTrapFromEntity(enemy_id);
+
+    Animation anim;
+
+    anim.textures.push_back(this->graphics.getTexture("ntrap1.png"));
+    anim.textureNames.push_back("ntrap1.png");
+    anim.timeQueues.push_back(1);
+
+    this->graphics.animateTexture(enemy_id, anim);
+
+    Animation at;
+
+    at.textures.push_back(this->graphics.getTexture("ntrap2.png"));
+    at.textureNames.push_back("ntrap2.png");
+    at.timeQueues.push_back(0.05);
+
+    for (int i = 0; i < 6; ++i)
+    {
+        at.textures.push_back(this->graphics.getTexture("ntrap3.png"));
+        at.textureNames.push_back("ntrap3.png");
+        at.timeQueues.push_back(0.02);
+        at.textures.push_back(this->graphics.getTexture("ntrap4.png"));
+        at.textureNames.push_back("ntrap4.png");
+        at.timeQueues.push_back(0.02);
+    }
+
+    at.textures.push_back(this->graphics.getTexture("ntrap2.png"));
+    at.textureNames.push_back("ntrap2.png");
+    at.timeQueues.push_back(0.1);
+
+    at.soundNames.push_back("trapzap.mp3");
+
+    this->graphics.animateEntity(enemy_id, at, at);
+
+}
+
 void Game::makeHeal(int x, int y)
 {
     x = x * 200;
@@ -838,6 +887,8 @@ void Game::loadTextures()
     for (int i = 1; i <= 4; ++i)
     {
         this->graphics.loadTextureFromImage("crawler_a" + std::to_string(i) + ".png");
+    
+        this->graphics.loadTextureFromImage("ntrap" + std::to_string(i) + ".png");
     }
 }
 
@@ -861,6 +912,8 @@ void Game::loadSounds()
     this->audio.loadSoundByName("zap.mp3");
 
     this->audio.loadSoundByName("fazedstomp.mp3");
+
+    this->audio.loadSoundByName("trapzap.mp3");
 }
 
 
@@ -1141,11 +1194,91 @@ void Game::actTwo()
 
     this->createRoom(21, 34, 6, 6, {0, 0, 0, 1});
 
+    this->createRoom(28, 22, 3, 5, {0, 0, 1, 0});
+
+    this->createRoom(35, 22, 3, 5, {1, 0, 0, 0});
+
     //this->createRoom(32, 18, 2, 2, {1, 1, 0, 0});
 
     //this->createHallway(13, 0, RIGHT, 1, 5);
 
 
+    this->makeTimedTrap(5, 0);
+    this->makeTimedTrap(16, 0);
+
+    this->makeTimedTrap(18, -9);
+
+    this->makeTimedTrap(24, -10);
+
+    this->makeTrap(6, 2);
+    this->makeTrap(9, 2);
+    this->makeTrap(9, -2);
+    this->makeTrap(6, -2);
+
+    for (int i = 0; i < 8; ++i)
+    {
+        this->makeTrap(7 + i, -9);
+    }
+
+    this->makeTrap(23, -4);
+    this->makeTrap(22, -2);
+    this->makeTrap(23, 0);
+
+    this->makeTimedTrap(21, 0);
+
+    // for (int i = 0; i < 5; ++i)
+    // {
+    //     for (int j = 0; j < 12; ++j)
+    //     {
+    //         this->makeTimedTrap(23 + i * 2 + (j % 2), 3 + j);
+    //     }
+    // }
+
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            this->makeTimedTrap(33 + i, 8 + j);
+        }
+    }
+
+
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 7; ++j)
+        {
+            this->makeTrap(27 + i, -4 + j);
+        }
+    }
+
+    for (int i = 0; i < 5; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            this->makeTimedTrap(23 + i * 2 + (j % 2), 4 + j);
+        }
+    }
+
+    for (int i = 0; i < 5; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            this->makeTimedTrap(23 + i * 2 + (j % 2), 11 + j);
+        }
+    }
+
+    for (int i = 0; i < 2; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            this->makeTimedTrap(41 + i, 24 + j);
+        }
+    }
+
+    for (int j = 0; j < 2; ++j)
+    {
+        this->makeTimedTrap(37, 31 + j);
+    }
 
 
     //Traps & heals before, enemies after
@@ -1168,7 +1301,7 @@ void Game::actTwo()
     
     this->spawnCrawler(18, -5);
 
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 2; ++i)
         this->spawnCrawler(27, -10);
 
     for (int i = 0; i < 6; ++i)
@@ -1183,6 +1316,35 @@ void Game::actTwo()
     this->spawnCrawler(12, 8);
 
 
+    // this->spawnCrawler(8, 0); // testing
+
+    // auto id = this->graphics.getLastId();
+
+    // Animation a1, a2;
+
+    // for (int i = 1; i <= 5; ++i)
+    // {
+    //     a1.textures.push_back(this->graphics.getTexture("energy_ball" + std::to_string(i) + ".png"));
+    //     a1.textureNames.push_back("energy_ball" + std::to_string(i) + ".png");
+    //     a1.timeQueues.push_back(0.05);
+    // }
+
+    // for (int i = 1; i <= 9; ++i)
+    // {
+    //     a2.textures.push_back(this->graphics.getTexture("eb_exp" + std::to_string(i) + ".png"));
+    //     a2.textureNames.push_back("eb_exp" + std::to_string(i) + ".png");
+    //     if (i != 9)
+    //         a2.timeQueues.push_back(0.03);
+    // }
+    // a2.timeQueues.push_back(2);
+
+    // this->graphics.makeEnemyRanged(id, a1, a2, 100, 1, 1, 0);
+
+    for (int i = 0; i < 100; ++i)
+        this->spawnCrawler(8, 0);
+
+
+    // this->launchEnergyBall(0, 0, 200, 200);
 
 
     this->audio.stopAmbient();

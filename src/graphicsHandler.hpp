@@ -13,6 +13,8 @@ class GraphicsHandler
 
         void linkAudio(AudioHandler* audio_ptr);
 
+        void syncAudio();
+
         void linkProgressTracker(ProgressTrack* tracker, std::vector<bool>* lvls);
 
         // Loads a texture from a specific folder by image name
@@ -45,6 +47,13 @@ class GraphicsHandler
         //Transforms an entity into a trap
         void trapFromEntity(const llint object_id);
 
+        void timedTrapFromEntity(const llint object_id);
+
+
+
+        void makeEnemyRanged(const llint t_id, const Animation& flight, const Animation& hit,
+            int dmge, double speed, double rate, double rng);
+
 
 
         //Deletes GameObject or inherited object by id  
@@ -62,6 +71,9 @@ class GraphicsHandler
         llint fireProjectile(const std::string& txtr, const Vector2& src,
             const Vector2& trgt, const int dmg, const double speed,
             const Animation& flight, const Animation& hit
+        );
+
+        llint fireTestProjectileFromObj(const llint t_id
         );
 
         //Makes enemies attack the player
@@ -123,12 +135,17 @@ class GraphicsHandler
 
         void afterFightCheck();
 
+        void checkRangedEnemy(Entity* enemy, Entity* player);
+        void projectileHit(Entity* i, GameObject* j);
+
         void buttonManage(Button* button);
 
         Camera2D activeCamera {0};
         Vector2* cameraTarget = nullptr;
         llint targetId;
 
+        llint trapTimer = 0;
+        bool triggerTraps = false;
 
         llint damageTimer = 0;
 
@@ -157,6 +174,8 @@ class GraphicsHandler
         
         std::unordered_map<llint, GameObject*> objectMap;
         std::unordered_map<std::string, Texture2D> textureMap;
+
+        std::list<llint> toDeleteList;
 
         bool hostilityFlag = true;
 

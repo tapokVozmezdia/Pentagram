@@ -56,11 +56,40 @@ bool ObjectHandler::collided(GameObject* obj_1, GameObject* obj_2)
     && obj_1->coordinates.y + obj_1->texture->height > obj_2->coordinates.y
     )
     {
-        // std::cout << "ATTACK!" << std::endl;
         return true;
     }
     return false;
 }
+
+bool ObjectHandler::hitBoxCollided(Entity* obj_1, Entity* obj_2)
+{
+
+    Vector2 cent1 = ObjectHandler::getCenter(obj_1);
+    Vector2 cent2 = ObjectHandler::getCenter(obj_2);
+
+    // std::cout << "HITBOX COLLISION!" << std::endl;
+
+    if (cent1.x + obj_1->hitbox.width / 2 > cent2.x - obj_2->hitbox.width / 2
+    && cent1.x - obj_1->hitbox.width / 2 < cent2.x + obj_2->hitbox.width / 2
+    && cent1.y + obj_1->hitbox.height / 2 > cent2.y - obj_2->hitbox.height / 2
+    && cent1.y - obj_1->hitbox.height / 2 < cent2.y + obj_2->hitbox.height / 2
+    )
+    {
+        // std::cout << "OBJ 1 cent: " << cent1.x << " " << cent1.y << std::endl;
+        // std::cout << "W: " << obj_1->hitbox.width <<
+        //     " " << "H: " <<  obj_1->hitbox.height << std::endl;
+
+        // std::cout << "OBJ 2 cent: " << cent2.x << " " << cent2.y << std::endl;
+        // std::cout << "W: " << obj_2->hitbox.width <<
+        //     " " << "H: " <<  obj_2->hitbox.height << std::endl;
+
+        // std::cout << "HITBOX COLLISION!" << std::endl;
+
+        return true;
+    }
+    return false;
+}
+
 
 double ObjectHandler::measureDistance(const Vector2& u, const Vector2& v)
 {

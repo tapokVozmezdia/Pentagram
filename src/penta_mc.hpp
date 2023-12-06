@@ -52,6 +52,10 @@
     #define NOISE_LENGTH 1.4
 #endif
 
+#ifndef TRAP_CD
+    #define TRAP_CD 2.f
+#endif
+
 #ifndef HOSTILITY_BREAK
     #define HOSTILITY_BREAK FPS * 3.
 #endif
@@ -61,15 +65,15 @@
 #endif
 
 #ifndef HP_BUFF
-    #define HP_BUFF 200
+    #define HP_BUFF 400
 #endif
 
 #ifndef SH_BUFF
-    #define SH_BUFF 100 
+    #define SH_BUFF 200 
 #endif
 
 #ifndef AT_BUFF
-    #define AT_BUFF 8
+    #define AT_BUFF 16
 #endif
 
 typedef unsigned int uint;
@@ -217,6 +221,14 @@ struct Hitbox
 };
 
 
+struct ProjectileHitProfile
+{
+    int damageOnHit = 0;
+    bool hasHit = false;
+    bool corrosive = false;
+}; 
+
+
 // Basic Game Object type
 struct GameObject
 {
@@ -234,7 +246,35 @@ struct GameObject
     bool mark = false;
     bool isFlipped = false;
     uint EXTRA = 0;
+
+    std::unique_ptr<ProjectileHitProfile> hitProfile = nullptr;
 };
+
+
+struct Projectile : GameObject
+{
+    int damage;
+    bool exploded;
+    std::shared_ptr<Animation> hitAnimation = nullptr;
+    Vector2 target;
+    double speedModifier = 1;
+    bool isExplosive = true;
+};
+
+
+
+struct RangedEntityProfile
+{
+    std::shared_ptr<Animation> flightAnim = nullptr;
+    std::shared_ptr<Animation> hitAnim = nullptr;
+    double fireRate = 1;
+    double range = 600;
+    double projSpeed = 1;
+    int dmg = 0;
+    uint rangedTimer = 0;
+};
+
+
 
 // Basic Entity type
 struct Entity : GameObject
@@ -252,6 +292,7 @@ struct Entity : GameObject
     Vector2 * target = nullptr;
     Team team;
     bool isTrap = false;
+    bool isTimedTrap = false;
     bool hasMoved = false;
     bool movingFlag = false;
     uint noise = 0;
@@ -259,6 +300,8 @@ struct Entity : GameObject
     Vector2 momentum;
     Hitbox hitbox;
     bool didDamage = false;
+
+    std::unique_ptr<RangedEntityProfile> rangedProfile = nullptr;
 };
 // TAK PLOHO
 
@@ -278,21 +321,11 @@ struct Entity : GameObject
 // };
 
 
-
-struct Projectile : GameObject
-{
-    int damage;
-    bool isExplosive = true;
-    bool exploded;
-    std::shared_ptr<Animation> hitAnimation = nullptr;
-    Vector2 target;
-    double speedModifier = 1;
-};
-
 namespace ObjectHandler
 {
     const Vector2 getCenter(GameObject* obj);
     bool collided(GameObject* obj_1, GameObject* obj_2);
+    bool hitBoxCollided(Entity* obj_1, Entity* obj_2);
     double measureDistance(const Vector2& u, const Vector2& v);
     const Vector2 getVectorDiff(const Vector2& u, const Vector2& v);
     const Vector2 getVectorWithLength(const Vector2& u, double lngth); // Returns same vector with different length
@@ -307,9 +340,6 @@ struct ProgressTrack
     int SH_BUFFS = 0;
     int AT_BUFFS = 0;
 };
-
-
-
 
 
 // Basic structure of Abelian group, just thought it would be a fun solution :)

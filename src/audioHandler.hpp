@@ -11,6 +11,8 @@ class AudioHandler
             std::unordered_map<llint, GameObject*>* objMp);
 
 
+        void linkCameraTarger(Vector2* trgt);
+
 
         void loadSoundByName(const std::string& sName);
 

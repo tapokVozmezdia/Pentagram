@@ -82,22 +82,19 @@ void Controls::attackRMC(const llint t_id, GraphicsHandler* graphics)
 {
     if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
-        Animation at;
 
-        std::list<Texture2D*> txt1;
-        std::list<std::string> nTxt1;
-        std::vector<double> tQ1;
-        for(int i = 1; i <= 5; ++i) 
-        {
-            txt1.push_back(graphics->getTexture("rA" + std::to_string(i) + ".png"));
-            nTxt1.push_back("rA" + std::to_string(i) + ".png");
-            tQ1.push_back(0.05);
-        }
+        graphics->fireTestProjectileFromObj(t_id);
 
-        at.textureNames = nTxt1;
-        at.textures = txt1;
-        at.timeQueues = tQ1;
-        graphics->playAnimationOnce({0,0}, at);
+        // Animation at;
+
+        // for(int i = 1; i <= 5; ++i) 
+        // {
+        //     at.textures.push_back(graphics->getTexture("rob_a" + std::to_string(i) + ".png"));
+        //     at.textureNames.push_back("rob_a" + std::to_string(i) + ".png");
+        //     at.timeQueues.push_back(0.05);
+        // }
+
+        // graphics->playAnimationOnce({0,0}, at);
         // std::cout << "played" << std::endl;
     }
 }
