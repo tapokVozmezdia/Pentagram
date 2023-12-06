@@ -121,8 +121,12 @@ class GraphicsHandler
 
         void run();
 
+
+        void mainObjectCycle();
+
+
         // Sets collision for all objects in objectList
-        void collisionCheck();
+        void collisionCheck(GameObject* i, GameObject* j);
         void resetCollisions();
         void resetMovement();
 
@@ -131,7 +135,7 @@ class GraphicsHandler
         void fightCheck(GameObject* i, GameObject* j);
 
         //Makes all the enemies charge and attack the player in the visibility radius
-        void enemyHostile();
+        void enemyHostile(Entity* i, Entity* j);
 
         void afterFightCheck();
 

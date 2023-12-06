@@ -536,64 +536,80 @@ void GraphicsHandler::perform()
 }
 
 
-
-
-
-void GraphicsHandler::collisionCheck()
+// Runs through all objects with O(n^2) complexity
+void GraphicsHandler::mainObjectCycle()
 {
     for (auto i = this->objectList.begin(); i != this->objectList.end(); ++i)
     {
-        if ((*i)->floor || (*i)->isWall)
+        if ((*i)->isWall || (*i)->floor)
             continue;
 
         for (auto j = i; j != this->objectList.end(); ++j)
         {
-            if (i == j)
+            if ((*j)->isWall || (*j)->floor)
                 continue;
 
-            if ((*j)->floor || (*j)->isWall)
+            if (*i == *j)
                 continue;
-
+            
             if ((*i)->nLP && (*j)->nLP)
                 continue;
 
-            // std::cout << "\tCOORD1\t COORD2\n" << 
-            //     "\t" << (**j).coordinates.x << "\t" << (**j).coordinates.y <<
-            //     "\n\t" << (**i).coordinates.x << "\t" << (**i).coordinates.y << "\n";
-
-            if (((**j).coordinates.x < ((**i).coordinates.x + (**i).texture->width) && 
-                (**j).coordinates.x + (**j).texture->width > (**i).coordinates.x &&
-                (**j).coordinates.y < ((**i).coordinates.y + (**i).texture->height) && 
-                (**j).coordinates.y + (**j).texture->height > (**i).coordinates.y))
+            if (this->hostilityFlag &&
+                (*i)->nL && (*j)->nL)
             {
-                this->objectMap[(**i).objectId]->collision = true;
-                this->objectMap[(**j).objectId]->collision = true;
+                if (((Entity*)(*i))->team == MAIN 
+                    && ((Entity*)(*j))->team == HOSTILE && !(((Entity*)(*j))->isTrap))
+                    this->enemyHostile((Entity*)(*i), (Entity*)(*j));
+                else if (((Entity*)(*j))->team == MAIN 
+                    && ((Entity*)(*i))->team == HOSTILE && !(((Entity*)(*i))->isTrap))
+                    this->enemyHostile((Entity*)(*j), (Entity*)(*i));
+            }
 
-                if ((*i)->nL && (*j)->nL)
-                {
-                    this->fightCheck(*i, *j);
-                    continue;
-                }
+            this->collisionCheck(*i, *j);
 
-                if ((*i)->nL && (*j)->hitProfile != nullptr)
-                {
-                    if (!((Entity*)(*i))->isTrap)
-                    this->projectileHit(
-                        (Entity*)(*i),
-                        (*j)
-                    );
-                }
-                else if ((*j)->nL && (*i)->hitProfile != nullptr)
-                {
-                    if (!((Entity*)(*j))->isTrap)
-                    this->projectileHit(
-                        (Entity*)(*j),
-                        (*i)
-                    );
-                }
-            } 
         }
     }
+}
+
+
+void GraphicsHandler::collisionCheck(GameObject* i, GameObject* j)
+{
+    // std::cout << "\tCOORD1\t COORD2\n" << 
+    //     "\t" << (**j).coordinates.x << "\t" << (**j).coordinates.y <<
+    //     "\n\t" << (**i).coordinates.x << "\t" << (**i).coordinates.y << "\n";
+
+    if ((j->coordinates.x < (i->coordinates.x + i->texture->width) && 
+        j->coordinates.x + j->texture->width > i->coordinates.x &&
+        j->coordinates.y < (i->coordinates.y + i->texture->height) && 
+        j->coordinates.y + j->texture->height > i->coordinates.y))
+    {
+        this->objectMap[i->objectId]->collision = true;
+        this->objectMap[j->objectId]->collision = true;
+
+        if (i->nL && j->nL)
+        {
+            this->fightCheck(i, j);
+            return;
+        }
+
+        if (i->nL && j->hitProfile != nullptr)
+        {
+            if (!((Entity*)(i))->isTrap)
+            this->projectileHit(
+                (Entity*)(i),
+                (j)
+            );
+        }
+        else if (j->nL && i->hitProfile != nullptr)
+        {
+            if (!((Entity*)(j))->isTrap)
+            this->projectileHit(
+                (Entity*)(j),
+                (i)
+            );
+        }
+    } 
 }
 
 void GraphicsHandler::resetCollisions()
@@ -969,166 +985,81 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
 }
 
 
-
-void GraphicsHandler::enemyHostile()
+//i - main, j - enemy
+void GraphicsHandler::enemyHostile(Entity* i, Entity* j)
 {
-    for (auto i = this->objectList.begin(); i != this->objectList.end(); ++i)
+    if (i->nL == false || j->nL == false)
     {
-        for (auto j = i; j != this->objectList.end(); ++j)
+        throw std::logic_error("Non entity given into enemyHostile method");
+    }
+
+    if (j->rangedProfile != nullptr)
+    {
+        this->checkRangedEnemy(j, i);
+        return;
+    }
+
+    bool makeNoise = false;
+    double nse = GetRandomValue(0, 10000);
+    nse /= 10000;
+
+    if (nse < 1  * NOISE_FREQUENCY / (double(FPS * 5.)))
+    {
+        makeNoise = true;
+    }
+
+    Vector2 c_i = ObjectHandler::getCenter(i);
+    Vector2 c_j = ObjectHandler::getCenter(j);
+
+    if(makeNoise && j->noise == 0)
+    {
+        (j->noise) += 1;
+        j->momentum = {
+            (float)GetRandomValue(-100, 100) / 100,
+            (float)GetRandomValue(-100, 100) / 100
+        };
+        j->noise_length = (float)GetRandomValue(0, 200) / 100;
+    }
+
+    if(j->noise > NOISE_LENGTH * (float)FPS * j->noise_length)
+    {
+        j->noise = 0;
+    }
+
+    if(j->noise != 0)
+    {
+        this->moveTextureDelta(j->objectId, j->momentum.x, 0);
+        this->moveTextureDelta(j->objectId, 0, j->momentum.y);
+
+        j->noise += 1;
+    }
+
+    if (sqrt(((c_i.x - c_j.x) * (c_i.x - c_j.x))
+    + ((c_i.y - c_j.y) * (c_i.y - c_j.y))) <= ENEMY_VISIBILITY)
+    {
+        double dx = c_i.x - c_j.x;
+        double dy = c_i.y - c_j.y;
+        double l = sqrt(dx * dx + dy * dy);
+        dx = dx / l * ENEMY_SPEED;
+        dy = dy / l * ENEMY_SPEED;
+
+        if (ObjectHandler::measureDistance(
+            ObjectHandler::getCenter(i),
+            ObjectHandler::getCenter(j)
+        ) > 40 && (makeNoise == false))
         {
-            if ((*i)->nL == false || (*j)->nL == false)
-            {
-                continue;
-            }
+            this->moveTextureDelta(j->objectId, dx, 0);
+            this->moveTextureDelta(j->objectId, 0, dy);
+        }
 
-            if (((Entity*)(*i))->rangedProfile != nullptr 
-                && ((Entity*)(*i))->team == HOSTILE 
-                && ((Entity*)(*j))->team == MAIN)
-            {
-                this->checkRangedEnemy((Entity*)(*i), (Entity*)(*j));
-                continue;
-            }
-
-            if (((Entity*)(*j))->rangedProfile != nullptr 
-                && ((Entity*)(*j))->team == HOSTILE
-                && ((Entity*)(*i))->team == MAIN)
-            {
-                this->checkRangedEnemy((Entity*)(*j), (Entity*)(*i));
-                continue;
-            }
-
-            if (((Entity*)(*i))->team == ((Entity*)(*j))->team ||
-                ((Entity*)(*i))->team == NEUTRAL || ((Entity*)(*j))->team == NEUTRAL
-                || ((Entity*)(*i))->isTrap == true || ((Entity*)(*j))->isTrap == true)
-            {
-                continue;
-            }
-
-            bool makeNoise = false;
-            double nse = GetRandomValue(0, 10000);
-            nse /= 10000;
-
-            if (nse < 1  * NOISE_FREQUENCY / (double(FPS * 5.)))
-            {
-                makeNoise = true;
-            }
-
-            bool flipFlag = false;
-
-            if ((((Entity*)(*i))->team == MAIN || ((Entity*)(*i))->team == ALLY) 
-            && (((Entity*)(*j))->team == HOSTILE))
-            {
-                Vector2 c_i = ObjectHandler::getCenter(*i);
-                Vector2 c_j = ObjectHandler::getCenter(*j);
-
-                if(makeNoise && ((Entity*)(*j))->noise == 0)
-                {
-                    (((Entity*)(*j))->noise) += 1;
-                    ((Entity*)(*j))->momentum = {
-                        (float)GetRandomValue(-100, 100) / 100,
-                        (float)GetRandomValue(-100, 100) / 100
-                    };
-                    ((Entity*)(*j))->noise_length = (float)GetRandomValue(0, 200) / 100;
-                }
-
-                if(((Entity*)(*j))->noise > NOISE_LENGTH * (float)FPS * ((Entity*)(*j))->noise_length)
-                {
-                    ((Entity*)(*j))->noise = 0;
-                }
-
-                if(((Entity*)(*j))->noise != 0)
-                {
-                    this->moveTextureDelta((*j)->objectId, ((Entity*)(*j))->momentum.x, 0);
-                    this->moveTextureDelta((*j)->objectId, 0, ((Entity*)(*j))->momentum.y);
-
-                    ((Entity*)(*j))->noise += 1;
-                }
-
-                if (sqrt(((c_i.x - c_j.x) * (c_i.x - c_j.x))
-                + ((c_i.y - c_j.y) * (c_i.y - c_j.y))) <= ENEMY_VISIBILITY)
-                {
-                    double dx = c_i.x - c_j.x;
-                    double dy = c_i.y - c_j.y;
-                    double l = sqrt(dx * dx + dy * dy);
-                    dx = dx / l * ENEMY_SPEED;
-                    dy = dy / l * ENEMY_SPEED;
-
-                    if (ObjectHandler::measureDistance(
-                        ObjectHandler::getCenter((*i)),
-                        ObjectHandler::getCenter((*j))
-                    ) > 40 && (makeNoise == false))
-                    {
-                        this->moveTextureDelta((*j)->objectId, dx, 0);
-                        this->moveTextureDelta((*j)->objectId, 0, dy);
-                    }
-
-                    this->audio->triggerCombatMusic();
-                    
-                    if (ObjectHandler::collided(*i, *j) && makeNoise)
-                    {
-                        triggerAttack((*j)->objectId);
-                    }
-                }
-            }
-
-            if ((((Entity*)(*j))->team == MAIN || ((Entity*)(*j))->team == ALLY) 
-            && (((Entity*)(*i))->team == HOSTILE))
-            {
-                Vector2 c_i = ObjectHandler::getCenter(*i);
-                Vector2 c_j = ObjectHandler::getCenter(*j);
-
-                if(makeNoise && ((Entity*)(*i))->noise == 0)
-                {
-                    (((Entity*)(*i))->noise) += 1;
-                    ((Entity*)(*i))->momentum = {
-                        (float)GetRandomValue(-100, 100) / 100,
-                        (float)GetRandomValue(-100, 100) / 100
-                    };
-                    ((Entity*)(*i))->noise_length = (float)GetRandomValue(0, 200) / 100;
-                }
-
-                if(((Entity*)(*i))->noise > NOISE_LENGTH * (float)FPS * ((Entity*)(*i))->noise_length)
-                {
-                    ((Entity*)(*i))->noise = 0;
-                }
-
-                if(((Entity*)(*i))->noise != 0)
-                {
-                    this->moveTextureDelta((*i)->objectId, ((Entity*)(*i))->momentum.x, 0);
-                    this->moveTextureDelta((*i)->objectId, 0, ((Entity*)(*i))->momentum.y);
-                    ((Entity*)(*i))->noise += 1;
-                }
-
-                if (sqrt(((c_j.x - c_i.x) * (c_j.x - c_i.x))
-                + ((c_j.y - c_i.y) * (c_j.y - c_i.y))) <= ENEMY_VISIBILITY)
-                {
-                    double dx = c_j.x - c_i.x;
-                    double dy = c_j.y - c_i.y;
-                    double l = sqrt(dx * dx + dy * dy);
-                    dx = dx / l * ENEMY_SPEED;
-                    dy = dy / l * ENEMY_SPEED;
-                    
-                    if (ObjectHandler::measureDistance(
-                        ObjectHandler::getCenter((*i)),
-                        ObjectHandler::getCenter((*j))
-                    ) > 40 && (makeNoise == false))
-                    {
-                        this->moveTextureDelta((*i)->objectId, dx, 0);
-                        this->moveTextureDelta((*i)->objectId, 0, dy);
-                    }
-
-                    this->audio->triggerCombatMusic();
-                    
-                    if (ObjectHandler::collided(*i, *j) && makeNoise)
-                    {
-                        triggerAttack((*i)->objectId);
-                    }
-                }
-            }
+        this->audio->triggerCombatMusic();
+        
+        if (ObjectHandler::collided(i, j) && makeNoise)
+        {
+            triggerAttack(j->objectId);
         }
     }
 }
-
 
 
 void GraphicsHandler::afterFightCheck()
@@ -1224,6 +1155,7 @@ void GraphicsHandler::afterFightCheck()
 }
 
 
+// i - target, j - projectile
 void GraphicsHandler::projectileHit(Entity* i, GameObject* j)
 {
     if (j->EXTRA == 1 && !(j->hitProfile->hasHit))
@@ -1583,14 +1515,17 @@ void GraphicsHandler::run()
             }
 
 
-            if (this->hostilityFlag)
-            {
-                this->enemyHostile(); // NEEDS TO BE MERGED WITH COLLISIONCHECK
-            }                         // FOR BETTER OPTIMIZATION (would be 2 times faster)
+            this->mainObjectCycle();
 
 
-            this->collisionCheck();   // NEEDS TO BE MERGED WITH ENEMYHOSTILE
-                                      // FOR BETTER OPTIMIZATION (would be 2 times faster)
+            // if (this->hostilityFlag)
+            // {
+            //     this->enemyHostile(); // NEEDS TO BE MERGED WITH COLLISIONCHECK
+            // }                         // FOR BETTER OPTIMIZATION (would be 2 times faster)
+
+
+            // this->collisionCheck();   // NEEDS TO BE MERGED WITH ENEMYHOSTILE
+                                         // FOR BETTER OPTIMIZATION (would be 2 times faster)
 
 
             // BETTER YET TO MAKE ALL ENEMIES ONLY CHECK WITH MAIN CHARACTER
