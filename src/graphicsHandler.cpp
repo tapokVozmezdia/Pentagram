@@ -847,6 +847,12 @@ void GraphicsHandler::fightCheck(GameObject* i, GameObject* j)
             return;
         }
 
+        if (((Entity*)(i))->baseDamage * ((Entity*)(i))->baseDamage
+            <= 0 && ((Entity*)(i))->team == ((Entity*)(i))->team)
+        {
+            return;
+        }
+
         if (((Entity*)(i))->isTrap
             || ((Entity*)(j))->isTrap)
         {

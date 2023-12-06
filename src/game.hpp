@@ -48,6 +48,7 @@ class Game
         void makeEnemy(int x, int y);
         void spawnCrawler(int x, int y);
         void spawnRangedCrawler(int x, int y);
+        void spawnEnemyRobot(int x, int y);
         void makeTrap(int x, int y);
         void makeTimedTrap(int x, int y);
         void makeHeal(int x, int y);

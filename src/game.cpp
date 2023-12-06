@@ -55,7 +55,7 @@ void Game::run()
     this->audio.playAmbient("menumusic.mp3", 0.5);
     this->audio.setCombatMusic("track2.mp3", 0.5);
 
-    //this->graphics.enemyHostilityTriggerOff(); // FOR LEVEL-DESIGN PURPOSES
+    // this->graphics.enemyHostilityTriggerOff(); // FOR LEVEL-DESIGN PURPOSES
 
     //this->menu.displayUpgrades();
 
@@ -137,7 +137,7 @@ void Game::run()
 void Game::makeCharacter(const int x, const int y)
 {
     // def dmg = 12
-    llint mc_id = (this->graphics.spawnEntity("robot.png", x - 100, y - 100, 
+    llint mc_id = (this->graphics.spawnEntity("robot.png", x, y, 
         12 + this->pTrack.AT_BUFFS * AT_BUFF, 
         400 + this->pTrack.HP_BUFFS * HP_BUFF, Team::MAIN));
     this->objectNameMap["MC"] = mc_id;
@@ -434,7 +434,7 @@ void Game::spawnCrawler(int x, int y)
 void Game::spawnRangedCrawler(int x, int y)
 {
     this->spawnCrawler(x, y);
-    this->graphics.setSpecialTint(this->graphics.getLastId(), LIGHTRED_TINT);
+    this->graphics.setSpecialTint(this->graphics.getLastId(), RED_TINT);
     
     Animation a1, a2;
 
@@ -458,6 +458,97 @@ void Game::spawnRangedCrawler(int x, int y)
         a1, a2, 25, 1.5, 0.5, 1.5
     );
 }
+
+
+
+
+void Game::spawnEnemyRobot(int x, int y)
+{
+    x *= 200;
+    y *= 200;
+
+    llint rob_id = (this->graphics.spawnEntity("robot.png", x + 100, y + 100, 
+    20, 
+    400, Team::HOSTILE));
+    this->objectNameMap["robot" + std::to_string(rob_id)] = rob_id;
+    // std::cout << "mc_id: " << std::endl;
+    // std::cout << mc_id << std::endl;
+
+    this->graphics.setSpecialTint(rob_id, LIGHTRED_TINT);
+
+    Animation anim;
+
+    anim.textures.push_back(this->graphics.getTexture("rob1.png"));
+    anim.textureNames.push_back("rob1.png");
+    anim.timeQueues.push_back(1);
+
+    for (int j = 0; j < 100; ++j)
+    {
+        for(int i = 2; i <= 6; ++i)
+        {
+            anim.textures.push_back(this->graphics.getTexture("rob" + std::to_string(i) + ".png"));
+            anim.textureNames.push_back("rob" + std::to_string(i) + ".png");
+            anim.timeQueues.push_back(0.05);
+        }
+
+        anim.textures.push_back(this->graphics.getTexture("rob1.png"));
+        anim.textureNames.push_back("rob1.png");
+        anim.timeQueues.push_back(0.5);
+    }
+
+    this->graphics.animateTexture(rob_id, anim);
+    
+    Animation at;
+
+    for(int i = 1; i <= 5; ++i) 
+    {
+        at.textures.push_back(this->graphics.getTexture("rob_a" + std::to_string(i) + ".png"));
+        at.textureNames.push_back("rob_a" + std::to_string(i) + ".png");
+    }
+
+    at.timeQueues.push_back(0.05);
+    at.timeQueues.push_back(0.03);
+    at.timeQueues.push_back(0.03);
+    at.timeQueues.push_back(0.03);
+    at.timeQueues.push_back(0.07);
+    
+    at.soundNames.push_back("swordslice11.mp3");
+    at.soundNames.push_back("swordslice12.mp3");
+    at.soundNames.push_back("swordslice13.mp3");
+    at.soundNames.push_back("swordslice14.mp3");
+
+    at.extraSound.push_back("sword_hit2.mp3");
+
+    this->graphics.animateEntity(rob_id, at, at);
+
+
+    Animation run;
+
+    for(int i = 1; i <= 8; ++i) 
+    {
+        run.textures.push_back(this->graphics.getTexture("rob_r" + std::to_string(i) + ".png"));
+        run.textureNames.push_back("rob_r" + std::to_string(i) + ".png");
+        run.timeQueues.push_back(0.05);
+    }
+
+    //txt2.push_back(this->graphics.getTexture("rob_r3.png"));
+    //nTxt2.push_back("rob_r3.png");
+    
+
+    //double mod = 4;
+
+    // tQ2.push_back(0.05 * mod);
+    // //tQ2.push_back(0.05 * mod);
+    // tQ2.push_back(0.05 * mod);
+    // tQ2.push_back(0.04 * mod);
+    // tQ2.push_back(0.05 * mod);
+    //tQ2.push_back(0.08);
+    //tQ2.push_back(0.05);
+
+    this->graphics.animateEntityMoving(rob_id, run);
+    this->graphics.setHitbox(rob_id, {44, 96});
+}
+
 
 
 void Game::makeTrap(int x, int y)
@@ -1413,6 +1504,24 @@ void Game::actTwo()
     }
 
 
+    this->makeHeal(29, -12);
+    this->makeHeal(30, -12);
+    this->makeHeal(30, -11);
+
+    this->makeHeal(23, 3);
+    this->makeHeal(32, 14);
+    this->makeHeal(23, 14);
+    this->makeHeal(32, 3);
+
+    this->makeHeal(40, 16);
+    this->makeHeal(40, 17);
+
+    this->makeHeal(39, 24);
+    this->makeHeal(26, 24);
+
+    this->makeHeal(23, 24);
+    this->makeHeal(24, 24);
+
     //Traps & heals before, enemies after
     this->makeCharacter(0, 0);
 
@@ -1450,41 +1559,19 @@ void Game::actTwo()
     this->spawnRangedCrawler(30, 26);
     this->spawnRangedCrawler(30, 26);
 
+    
+
     this->spawnRangedCrawler(35, 26);
     this->spawnRangedCrawler(35, 26);
 
-    // this->spawnCrawler(8, 0); // testing
+    for (int i = 0; i < 4; ++i)
+        this->spawnEnemyRobot(24, 37);
 
-    // auto id = this->graphics.getLastId();
+    this->spawnRangedCrawler(25, 38);
+    this->spawnRangedCrawler(21, 38);
 
-    // this->graphics.setSpecialTint(id, BLUE_TINT);
-
-    // Animation a1, a2;
-
-    // for (int i = 1; i <= 5; ++i)
-    // {
-    //     a1.textures.push_back(this->graphics.getTexture("energy_ball" + std::to_string(i) + ".png"));
-    //     a1.textureNames.push_back("energy_ball" + std::to_string(i) + ".png");
-    //     a1.timeQueues.push_back(0.05);
-    // }
-
-    // for (int i = 1; i <= 9; ++i)
-    // {
-    //     a2.textures.push_back(this->graphics.getTexture("eb_exp" + std::to_string(i) + ".png"));
-    //     a2.textureNames.push_back("eb_exp" + std::to_string(i) + ".png");
-    //     if (i != 9)
-    //         a2.timeQueues.push_back(0.03);
-    // }
-    // a2.timeQueues.push_back(2);
-
-    // this->graphics.makeEnemyRanged(id, a1, a2, 100, 1, 1, 0);
-
-    // for (int i = 0; i < 100; ++i)
-    //     this->spawnCrawler(8, 0);
-
-
-    // this->launchEnergyBall(0, 0, 200, 200);
-
+    for (int i = 0; i < 3; ++i)
+        this->spawnCrawler(32, 24);
 
     this->audio.stopAmbient();
 
