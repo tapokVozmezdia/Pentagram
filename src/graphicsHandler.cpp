@@ -1585,11 +1585,19 @@ void GraphicsHandler::run()
 
             if (this->hostilityFlag)
             {
-                this->enemyHostile();
-            }
+                this->enemyHostile(); // NEEDS TO BE MERGED WITH COLLISIONCHECK
+            }                         // FOR BETTER OPTIMIZATION (would be 2 times faster)
 
 
-            this->collisionCheck();
+            this->collisionCheck();   // NEEDS TO BE MERGED WITH ENEMYHOSTILE
+                                      // FOR BETTER OPTIMIZATION (would be 2 times faster)
+
+
+            // BETTER YET TO MAKE ALL ENEMIES ONLY CHECK WITH MAIN CHARACTER
+            // TO REDUCE COMPLEXITY FROM O(n^2) TO O(n)
+            // NEEDS TO BE TESTED
+
+
             this->animationCheck();
             this->afterFightCheck();
 
