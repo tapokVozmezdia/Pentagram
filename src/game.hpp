@@ -35,6 +35,8 @@ class Game
 
         std::vector<bool> levelsPassed;
 
+        int difficulty = 0;
+
         void loadTextures();
 
         void loadSounds();
@@ -42,6 +44,7 @@ class Game
 
         void actOne();
         void actTwo();
+        void actThree();
 
 
         void makeCharacter(const int x, const int y);
@@ -49,6 +52,7 @@ class Game
         void spawnCrawler(int x, int y);
         void spawnRangedCrawler(int x, int y);
         void spawnEnemyRobot(int x, int y);
+        void spawnTurret(int x, int y);
         void makeTrap(int x, int y);
 
         void makeTimedTrap(int x, int y);

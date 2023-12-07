@@ -15,7 +15,8 @@ class GraphicsHandler
 
         void syncAudio();
 
-        void linkProgressTracker(ProgressTrack* tracker, std::vector<bool>* lvls);
+        void linkProgressTracker(ProgressTrack* tracker, std::vector<bool>* lvls, 
+            int* diff);
 
         // Loads a texture from a specific folder by image name
         void loadTextureFromImage(const std::string& imgName); // Custom method, don't raylib one!!!
@@ -51,6 +52,8 @@ class GraphicsHandler
         void trapFromEntity(const llint object_id);
 
         void timedTrapFromEntity(const llint object_id);
+
+        void turretFromRangedEntity(const llint object_id);
 
         void setSpecialTint(const llint object_id, const Tint& tint);
 
@@ -159,6 +162,8 @@ class GraphicsHandler
         llint shieldTimer = 0;
 
         int enemyNum = 0;
+
+        int* difficulty = nullptr;
 
         bool buttonFlag = false;
 

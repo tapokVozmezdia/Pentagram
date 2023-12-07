@@ -9,6 +9,12 @@ void Menu::linkMenu(GraphicsHandler* graphics)
     this->buttons.push_back({IdCounter::getFreeId(), "QUIT", true});
     this->buttons.push_back({IdCounter::getFreeId(), "LEVELS", false});
     this->buttons.push_back({IdCounter::getFreeId(), "DIFFICULTY", false});
+    this->buttons.push_back({IdCounter::getFreeId(), "EASY", false});
+        (this->buttons.back()).isDifficulty = true;
+    this->buttons.push_back({IdCounter::getFreeId(), "NORMAL", false});
+        (this->buttons.back()).isDifficulty = true;
+    this->buttons.push_back({IdCounter::getFreeId(), "HARD", false});
+        (this->buttons.back()).isDifficulty = true;
     this->buttons.push_back({IdCounter::getFreeId(), "LEVEL 1", false});
     this->buttons.push_back({IdCounter::getFreeId(), "LEVEL 2", false});
     this->buttons.push_back({IdCounter::getFreeId(), "LEVEL 3", false});
@@ -63,6 +69,21 @@ bool Menu::actTwoInitiated(GraphicsHandler* graphics)
     for(auto it : this->buttons)
     {
         if (it.text == "LEVEL 2" && it.is_clicked == true)
+        {
+            this->inGame = true;
+            graphics->flagTheStart();
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool Menu::actThreeInitiated(GraphicsHandler* graphics)
+{
+    for(auto it : this->buttons)
+    {
+        if (it.text == "LEVEL 3" && it.is_clicked == true)
         {
             this->inGame = true;
             graphics->flagTheStart();

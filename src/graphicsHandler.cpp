@@ -45,10 +45,12 @@ void GraphicsHandler::syncAudio()
 }
 
 
-void GraphicsHandler::linkProgressTracker(ProgressTrack* tracker, std::vector<bool>* lvls)
+void GraphicsHandler::linkProgressTracker(ProgressTrack* tracker, std::vector<bool>* lvls,
+    int* diff)
 {
     this->linkedTracker = tracker;
     this->passedLvls = lvls;
+    this->difficulty = diff;
 }
 
 
@@ -199,7 +201,7 @@ void GraphicsHandler::trapFromEntity(const llint object_id)
 {
     if (this->objectMap[object_id]->nL == false)
     {
-        throw std::logic_error("Non-entity id was ginven into trapFromEntity func");
+        throw std::logic_error("Non-entity id was given into trapFromEntity method");
     }
     ((Entity*)(this->objectMap[object_id]))->isTrap = true;
 
@@ -210,11 +212,26 @@ void GraphicsHandler::timedTrapFromEntity(const llint object_id)
 {
     if (this->objectMap[object_id]->nL == false)
     {
-        throw std::logic_error("Non-entity id was ginven into timedTrapFromEntity func");
+        throw std::logic_error("Non-entity id was given into timedTrapFromEntity method");
     }
     ((Entity*)(this->objectMap[object_id]))->isTrap = true;
     ((Entity*)(this->objectMap[object_id]))->isTimedTrap = true;
 
+    this->enemyNum--;
+}
+
+void GraphicsHandler::turretFromRangedEntity(const llint object_id)
+{
+    if (this->objectMap[object_id]->nL == false)
+    {
+        throw std::logic_error("Non-entity id was given into turretFromRangedEntity method");
+    }
+    if (((Entity*)(this->objectMap[object_id]))->rangedProfile == nullptr)
+    {
+        throw std::logic_error("Non-ranged entity was given into turretFromRangedEntity method");
+    }
+
+    ((Entity*)(this->objectMap[object_id]))->isTurret = true;
     this->enemyNum--;
 }
 
@@ -1011,6 +1028,12 @@ void GraphicsHandler::enemyHostile(Entity* i, Entity* j)
         throw std::logic_error("Non entity given into enemyHostile method");
     }
 
+    if (((Entity*)(j))->isTurret)
+    {
+        this->checkRangedEnemy(j, i);
+        return;
+    }
+
     bool makeNoise = false;
     double nse = GetRandomValue(0, 10000);
     nse /= 10000;
@@ -1207,32 +1230,35 @@ void GraphicsHandler::checkRangedEnemy(Entity* enemy, Entity* player)
     if (dist <= enemy->rangedProfile->range * (float)ENEMY_VISIBILITY)
     {
         this->audio->triggerCombatMusic();
-        if (dist > enemy->rangedProfile->range 
-            * (float)ENEMY_VISIBILITY - 150)
+        if (!(enemy->isTurret))
         {
-            this->moveTextureDelta(
-                enemy->objectId,
-                ObjectHandler::getVectorWithLength(
-                    ObjectHandler::getVectorDiff(
-                        ObjectHandler::getCenter(enemy),
-                        ObjectHandler::getCenter(player)
-                    ),
-                    ENEMY_SPEED
-                )
-            );
-        }
-        else if (dist < 200)
-        {
-            this->moveTextureDelta(
-                enemy->objectId,
-                ObjectHandler::getVectorWithLength(
-                    ObjectHandler::getVectorDiff(
-                        ObjectHandler::getCenter(player),
-                        ObjectHandler::getCenter(enemy)
-                    ),
-                    ENEMY_SPEED
-                )
-            );
+            if (dist > enemy->rangedProfile->range 
+                * (float)ENEMY_VISIBILITY - 150)
+            {
+                this->moveTextureDelta(
+                    enemy->objectId,
+                    ObjectHandler::getVectorWithLength(
+                        ObjectHandler::getVectorDiff(
+                            ObjectHandler::getCenter(enemy),
+                            ObjectHandler::getCenter(player)
+                        ),
+                        ENEMY_SPEED
+                    )
+                );
+            }
+            else if (dist < 200)
+            {
+                this->moveTextureDelta(
+                    enemy->objectId,
+                    ObjectHandler::getVectorWithLength(
+                        ObjectHandler::getVectorDiff(
+                            ObjectHandler::getCenter(player),
+                            ObjectHandler::getCenter(enemy)
+                        ),
+                        ENEMY_SPEED
+                    )
+                );
+            }
         }
         if (dist >= 150)
         {
@@ -1263,8 +1289,10 @@ void GraphicsHandler::drawButtons()
 {
     uint counter = 0;
     bool tmp_flag = false;
+    int i = 0;
     for(auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
     {
+        i++;
         if ((*it)->visible == true)
         {
             if (this->buttonFlag == false)
@@ -1275,10 +1303,31 @@ void GraphicsHandler::drawButtons()
             }
             if (!(*it)->isUpgrade)
             {
-                if ((*it)->hovered == false)
-                    DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, DARKBLUE);
+                Color def, hovered;
+                if (!(*it)->isDifficulty)
+                {
+                    def = DARKBLUE;
+                    hovered = PURPLE;
+                }
                 else
-                    DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, PURPLE);
+                {
+                    int d = *(this->difficulty) + 8;
+                    if (d == i)
+                    {
+                        def = GOLD;
+                        hovered = ORANGE;
+                    }
+                    else
+                    {
+                        def = BLUE;
+                        hovered = SKYBLUE;
+                    }
+                }
+
+                if ((*it)->hovered == false)
+                    DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, def);
+                else
+                    DrawRectangle(WIDTH / 2 - 125, 20 + 70 * counter, 250, 50, hovered);
                 DrawText(((*it)->text).c_str(), WIDTH / 2 - 125, 20 + 70 * counter, 24, RED);
                 (*it)->position = {(float)(WIDTH / 2 - 125), (float)(20 + 70 * counter)};
             }
@@ -1362,7 +1411,23 @@ void GraphicsHandler::buttonManage(Button* button)
         int i = 1;
         for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
         {
-            if (i > 4 && i < 7)
+            if ((i > 4 && i < 7) || i == this->buttonList.size() - 3)
+            {
+                (*it)->visible = true;
+            }
+            else
+            {
+                (*it)->visible = false;
+            }
+            i++;
+        }
+    }
+    if (button->text == "SETTINGS")
+    {
+        int i = 1;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            if (i == this->buttonList.size() - 3)
             {
                 (*it)->visible = true;
             }
@@ -1378,7 +1443,7 @@ void GraphicsHandler::buttonManage(Button* button)
         int i = 1;
         for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
         {
-            if (i > 6 && i < 11)
+            if ((i > 9 && i < 14) || i == this->buttonList.size() - 3)
             {
                 (*it)->visible = true;
             }
@@ -1404,6 +1469,62 @@ void GraphicsHandler::buttonManage(Button* button)
         for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
         {
             (*it)->visible = false;
+        }
+    }
+
+    if (button->text == "LEVEL 3")
+    {
+        this->buttonFlag = false;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            (*it)->visible = false;
+        }
+    }
+
+    if (button->text == "DIFFICULTY")
+    {
+        int i = 1;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            if ((i > 6 && i < 10) || i == this->buttonList.size() - 3)
+            {
+                (*it)->visible = true;
+            }
+            else
+            {
+                (*it)->visible = false;
+            }
+            i++;
+        }
+    }
+
+    if (button->text == "EASY")
+    {
+        *(this->difficulty) = -1;
+    }
+    if (button->text == "NORMAL")
+    {
+        *(this->difficulty) = 0;
+    }
+    if (button->text == "HARD")
+    {
+        *(this->difficulty) = 1;
+    }
+
+    if (button->text == "BACK")
+    {
+        int i = 1;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            if (i < 5)
+            {
+                (*it)->visible = true;
+            }
+            else
+            {
+                (*it)->visible = false;
+            }
+            i++;
         }
     }
     
@@ -1548,6 +1669,7 @@ void GraphicsHandler::run()
             // this->collisionCheck();   // NEEDS TO BE MERGED WITH ENEMYHOSTILE
                                          // FOR BETTER OPTIMIZATION (would be 2 times faster)
 
+            // ALL ABOVE SOLVED
 
             // BETTER YET TO MAKE ALL ENEMIES ONLY CHECK WITH MAIN CHARACTER
             // TO REDUCE COMPLEXITY FROM O(n^2) TO O(n)

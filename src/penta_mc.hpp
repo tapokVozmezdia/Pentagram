@@ -193,6 +193,7 @@ struct Button
     std::string text;
     bool visible;
     bool isUpgrade = false;
+    bool isDifficulty = false;
     uint width = 250;
     uint height = 50;
     bool is_clicked = false;
@@ -304,6 +305,7 @@ struct Entity : GameObject
     Team team;
     bool isTrap = false;
     bool isTimedTrap = false;
+    bool isTurret = false;
     bool hasMoved = false;
     bool movingFlag = false;
     uint noise = 0;
