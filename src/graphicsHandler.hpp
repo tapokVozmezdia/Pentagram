@@ -3,6 +3,7 @@
 #pragma once
 
 #include "audioHandler.hpp"
+#include "statRecorder.hpp"
 
 class GraphicsHandler
 {
@@ -16,10 +17,11 @@ class GraphicsHandler
         void syncAudio();
 
         void linkProgressTracker(ProgressTrack* tracker, std::vector<bool>* lvls, 
-            int* diff);
+            int* diff, Recorder* rec);
 
         // Loads a texture from a specific folder by image name
         void loadTextureFromImage(const std::string& imgName); // Custom method, don't raylib one!!!
+        void loadTextureFromRescaledImage(const std::string& imgName, float scale);
 
         Texture2D* getTexture(const std::string& tName); // Returns texture from texture map by name
 
@@ -42,6 +44,9 @@ class GraphicsHandler
         void setHitbox(llint t_id, const int width, const int height);
 
 
+        void setBaseShield(const llint t_id, const int shield);
+
+
         void setFlips(const llint t_id, const Flipper& fl);
 
 
@@ -60,6 +65,7 @@ class GraphicsHandler
         void makeEnemyRanged(const llint t_id, const Animation& flight, const Animation& hit,
             int dmge, double speed, double rate, double rng);
 
+        void setSpecialProjTint(const llint t_id, Tint tint);
 
 
         //Deletes GameObject or inherited object by id  
@@ -150,6 +156,8 @@ class GraphicsHandler
 
         void buttonManage(Button* button);
 
+        void drawStats();
+
         Camera2D activeCamera {0};
         Vector2* cameraTarget = nullptr;
         llint targetId;
@@ -168,6 +176,8 @@ class GraphicsHandler
         bool buttonFlag = false;
 
         bool startFlag = false;
+
+        bool statFlag = false;
 
         bool victoryFlag = false;
 
@@ -192,4 +202,5 @@ class GraphicsHandler
         bool hostilityFlag = true;
 
         AudioHandler* audio = nullptr;
+        Recorder* records = nullptr;
 };

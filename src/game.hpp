@@ -16,7 +16,7 @@ class Game
 
         GraphicsHandler graphics; 
         AudioHandler audio;   
-
+        Recorder records;
         Menu menu;
 
         std::unordered_map<std::string, llint> objectNameMap;
@@ -35,6 +35,8 @@ class Game
 
         std::vector<bool> levelsPassed;
 
+        Tint wallTint = DEFAULT_TINT;
+
         int difficulty = 0;
 
         void loadTextures();
@@ -48,11 +50,21 @@ class Game
 
 
         void makeCharacter(const int x, const int y);
+        void makeCustomEnemy(int x, int y, int dmg, int hp);
+        void makeCrawler(int x, int y, int dmg, int hp, float attackTime, bool big);
+        void makeCustomTurret(int x, int y, int dmg, 
+            double prSpeed, double fireRate, Tint prTint);
+
         void makeEnemy(int x, int y);
         void spawnCrawler(int x, int y);
+        void spawnEnhancedEnemy(int x, int y);
+        void spawnBigCrawler(int x, int y);
+        void spawnEnhancedCrawler(int x, int y);
         void spawnRangedCrawler(int x, int y);
+        void spawnEnhancedRangedCrawler(int x, int y);
         void spawnEnemyRobot(int x, int y);
         void spawnTurret(int x, int y);
+        void spawnEnhancedTurret(int x, int y);
         void makeTrap(int x, int y);
 
         void makeTimedTrap(int x, int y);
@@ -71,5 +83,5 @@ class Game
         void createCasm(int x, int y, const Directions& dirs, const Tint& tint);
         void createCasmRoom(int x, int y, const int wdth, const int hgth, const Directions& exits, const Tint& tint);
         void createCasmBlock(int x, int y, const int wdth, const int hgth, const Tint& tint);
-        void createCasmPath(int x,int y, const SingularDirection dir, const uint length, const Tint& tint);
+        void createCasmPath(int x,int y, const int wdth, const int hgth, const Directions& exits, const Tint& tint);
 };

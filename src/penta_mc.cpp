@@ -118,10 +118,16 @@ Color enumHandler::tintToColor(const Tint& tnt)
             return {255, 64, 64, 255};
         case YELLOW_TINT:
             return {255, 255, 64, 255};
+        case DARK_ORANGE_TINT:
+            return {128, 64, 0, 255};   
         case GREEN_TINT:
             return {64, 255, 64, 255};
         case BLUE_TINT:
             return {64, 64, 255, 255};
+        case VIOLET_TINT:
+            return {168, 0, 255, 255};
+        case DARK_PURPLE_TINT:
+            return {48, 0, 128, 255};
         case LIGHTRED_TINT:
             return {255, 128, 128, 255};
         default:

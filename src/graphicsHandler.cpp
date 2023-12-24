@@ -46,11 +46,12 @@ void GraphicsHandler::syncAudio()
 
 
 void GraphicsHandler::linkProgressTracker(ProgressTrack* tracker, std::vector<bool>* lvls,
-    int* diff)
+    int* diff, Recorder* rec)
 {
     this->linkedTracker = tracker;
     this->passedLvls = lvls;
     this->difficulty = diff;
+    this->records = rec;
 }
 
 
@@ -59,9 +60,20 @@ void GraphicsHandler::loadTextureFromImage(const std::string& imgName)
 {
     std::string tmp = "..\\assets\\images\\" + imgName;
     Image image = LoadImage(tmp.c_str());
-    UnloadImage(image);
     // std::cout << "TEXTURE LOADING HERE" << std::endl;
     this->textureMap[imgName] = LoadTextureFromImage(image);
+    UnloadImage(image);
+}
+
+void GraphicsHandler::loadTextureFromRescaledImage(const std::string& imgName, 
+    float scale)
+{
+    std::string tmp = "..\\assets\\images\\" + imgName;
+    Image image = LoadImage(tmp.c_str());
+    ImageResizeNN(&image, int(image.width * scale), int(image.height * scale));
+    // std::cout << "TEXTURE LOADING HERE" << std::endl;
+    this->textureMap["SCALED_" + (imgName)] = LoadTextureFromImage(image);
+    UnloadImage(image);
 }
 
 Texture2D* GraphicsHandler::getTexture(const std::string& tName)
@@ -172,6 +184,14 @@ void GraphicsHandler::setHitbox(llint t_id, const Hitbox& hbox)
     ((Entity*)(this->objectMap[t_id]))->hitbox = {hbox.width, hbox.height};
 }
 
+void GraphicsHandler::setBaseShield(const llint t_id, const int shield)
+{
+    if (!this->objectMap[t_id]->nL)
+        throw std::logic_error("trying to shield non-entity");
+    ((Entity*)(this->objectMap[t_id]))->baseShield = shield;
+    ((Entity*)(this->objectMap[t_id]))->curShield = shield;
+}
+
 void GraphicsHandler::setHitbox(llint t_id, const int width, const int height)
 {
     if (this->objectMap[t_id]->nL == false)
@@ -267,13 +287,23 @@ void GraphicsHandler::makeEnemyRanged(const llint t_id, const Animation& flight,
 }
 
 
+void GraphicsHandler::setSpecialProjTint(const llint t_id, Tint tint)
+{
+    if (!this->objectMap[t_id]->nL)
+        throw std::logic_error("projectile tint request to non-entity object");
+    if (((Entity*)(this->objectMap[t_id]))->rangedProfile == nullptr)
+        throw std::logic_error("projectile tint request to non-ranged entity");
+    ((Entity*)(this->objectMap[t_id]))->rangedProfile->pr_tint = tint;
+}
+
 
 void GraphicsHandler::deleteTexture(const llint object_id)
 {
     if ((this->objectMap[object_id])->nL == true)
     {
         if (((Entity*)(this->objectMap[object_id]))->team == HOSTILE &&
-            ((Entity*)(this->objectMap[object_id]))->isTrap == false)
+            ((Entity*)(this->objectMap[object_id]))->isTrap == false && 
+            ((Entity*)(this->objectMap[object_id]))->isTurret == false)
         {
             this->enemyNum--;
         }
@@ -535,12 +565,6 @@ void GraphicsHandler::centerCamera(llint t_id)
 
     // this->activeCamera.zoom = 0.4f; // FOR LEVEL-DESIGN PURPOSES
 
-    if (this->objectMap[t_id]->nL)
-    {
-        ((Entity*)(this->objectMap[t_id]))->baseShield = 200;
-        ((Entity*)(this->objectMap[t_id]))->curShield = 200;
-    }
-
     // std::cout << "HERE " << std::endl;
     // std::cout << this->objectMap[t_id]->coordinates.x << " " <<
     //     this->objectMap[t_id]->coordinates.y << std::endl;
@@ -728,6 +752,7 @@ void GraphicsHandler::animationCheck()
                         }, 
                         *(((Projectile*)(*i))->hitAnimation)
                     );
+                this->setSpecialTint(this->getLastId(), ((Projectile*)(*i))->hitTint);
                 // std::cout << this->getLastId() << std::endl; // WORKS
                 
                 this->objectMap[this->getLastId()]->hitProfile
@@ -1179,6 +1204,7 @@ void GraphicsHandler::afterFightCheck()
                 this->victoryFlag = true;
                 this->cameraTarget = nullptr;
                 this->audio->deathFlag();
+                this->records->saveLastRecord(this->curLvl, *(this->difficulty));
             }
         }
     }
@@ -1212,6 +1238,7 @@ void GraphicsHandler::projectileHit(Entity* i, GameObject* j)
         }
 
         (j->hitProfile->hasHit) = true;
+        this->damageTimer = 0;
     }
 }
 
@@ -1275,6 +1302,8 @@ void GraphicsHandler::checkRangedEnemy(Entity* enemy, Entity* player)
                     *(enemy->rangedProfile->flightAnim),
                     *(enemy->rangedProfile->hitAnim)
                 );
+                this->setSpecialTint(this->getLastId(), enemy->rangedProfile->pr_tint);
+                ((Projectile*)(this->objectMap[this->getLastId()]))->hitTint = enemy->rangedProfile->pr_tint;
             }
             else
             {
@@ -1295,6 +1324,12 @@ void GraphicsHandler::drawButtons()
         i++;
         if ((*it)->visible == true)
         {
+            if ((*it)->text == "LEVEL 4")
+            {
+                counter++;
+                continue;
+            }
+
             if (this->buttonFlag == false)
             {
                 ClearBackground(BLACK);
@@ -1382,7 +1417,8 @@ void GraphicsHandler::buttonClickCheck()
         {
             (*it)->hovered = true;
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            {    (*it)->is_clicked = true;
+            {    
+                (*it)->is_clicked = true;
 
                 for (auto ik = this->buttonList.begin(); ik != this->buttonList.end(); ik++)
                 {
@@ -1403,6 +1439,30 @@ void GraphicsHandler::buttonClickCheck()
     }
 }
 
+void GraphicsHandler::drawStats()
+{
+    int* stats = this->records->getStats();
+    for (int i = 0; i < 3; ++i)
+    {
+        DrawText(("LEVEL " + std::to_string(i + 1)).c_str(), 
+            WIDTH / 2 - 360 + (270 * i), HEIGHT / 2 - 200, 48, GOLD);
+        for (int j = 0; j < 3; ++j)
+        {
+            std::string st = "None";
+            if (stats[i * 3 + j] != 2000000000)
+                st = std::to_string(stats[i * 3 + j]);
+
+            DrawText((st).c_str(),
+                WIDTH / 2 - 300 + (270 * i), HEIGHT / 2 - 80 + (80 * j), 32, WHITE);
+        }
+    }
+    DrawText("EASY",
+        WIDTH / 2 - 520, HEIGHT / 2 - 80, 36, GREEN);
+    DrawText("NORMAL",
+        WIDTH / 2 - 520, HEIGHT / 2, 36, YELLOW);
+    DrawText("HARD",
+        WIDTH / 2 - 520, HEIGHT / 2 + 80, 36, RED);    
+}
 
 void GraphicsHandler::buttonManage(Button* button)
 {
@@ -1422,6 +1482,7 @@ void GraphicsHandler::buttonManage(Button* button)
             i++;
         }
     }
+
     if (button->text == "SETTINGS")
     {
         int i = 1;
@@ -1438,6 +1499,26 @@ void GraphicsHandler::buttonManage(Button* button)
             i++;
         }
     }
+
+    if (button->text == "STATS")
+    {
+        int i = 1;
+        for (auto it = this->buttonList.begin(); it != this->buttonList.end(); it++)
+        {
+            if (i == this->buttonList.size() - 3)
+            {
+                (*it)->visible = true;
+            }
+            else
+            {
+                (*it)->visible = false;
+            }
+            i++;
+        }
+        this->records->loadStats();
+        this->statFlag = true;
+    }
+
     if (button->text == "LEVELS")
     {
         int i = 1;
@@ -1454,6 +1535,7 @@ void GraphicsHandler::buttonManage(Button* button)
             i++;
         }
     }
+
     if (button->text == "LEVEL 1")
     {
         this->buttonFlag = false;
@@ -1526,6 +1608,7 @@ void GraphicsHandler::buttonManage(Button* button)
             }
             i++;
         }
+        this->statFlag = false;
     }
     
     if (button->text == "DAMAGE")
@@ -1628,8 +1711,6 @@ void GraphicsHandler::setCurLvl(const uint lvl)
     this->curLvl = lvl;
 }
 
-
-
 void GraphicsHandler::run()
 {
     BeginDrawing();
@@ -1638,6 +1719,9 @@ void GraphicsHandler::run()
         ClearBackground(BLACK);
 
         this->drawButtons();
+
+        if (this->statFlag)
+            this->drawStats();
 
         this->buttonClickCheck();
 
@@ -1735,8 +1819,11 @@ void GraphicsHandler::run()
                 DrawText(("ENEMIES: " + std::to_string(
                     this->enemyNum)).c_str(), 10, HEIGHT - 42, 32, RED);
                 if (this->enemyNum == 0)
+                {
                     DrawText("PRESS SPACE TO EXIT LEVEL", WIDTH / 2 - 200, 
-                        HEIGHT / 2 + 200, 42, WHITE);
+                    HEIGHT / 2 + 200, 42, WHITE);
+                    this->records->stopRecording();
+                }
             }
 
         }

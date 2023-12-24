@@ -147,8 +147,11 @@ typedef enum
     DEFAULT_TINT = 0,
     RED_TINT,
     YELLOW_TINT,
+    DARK_ORANGE_TINT,
     GREEN_TINT,
     BLUE_TINT,
+    VIOLET_TINT,
+    DARK_PURPLE_TINT,
     LIGHTRED_TINT
 } Tint;
 
@@ -271,6 +274,7 @@ struct Projectile : GameObject
     Vector2 target;
     double speedModifier = 1;
     bool isExplosive = true;
+    Tint hitTint = DEFAULT_TINT;
 };
 
 
@@ -284,6 +288,7 @@ struct RangedEntityProfile
     double projSpeed = 1;
     int dmg = 0;
     uint rangedTimer = 0;
+    Tint pr_tint = DEFAULT_TINT;
 };
 
 

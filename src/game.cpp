@@ -50,7 +50,7 @@ void Game::run()
 
     
     this->graphics.linkProgressTracker(&(this->pTrack), &(this->levelsPassed), 
-        &(this->difficulty));
+        &(this->difficulty), &(this->records));
 
 
     this->audio.playAmbient("menumusic.mp3", 0.5);
@@ -73,6 +73,7 @@ void Game::run()
 
             this->actOne();
             this->graphics.syncAudio();
+            this->records.startRecording();
         }
 
         if (this->menu.actTwoInitiated(&(this->graphics)))
@@ -86,6 +87,7 @@ void Game::run()
 
             this->actTwo();
             this->graphics.syncAudio();
+            this->records.startRecording();
         }
 
         if (this->menu.actThreeInitiated(&(this->graphics)))
@@ -99,6 +101,7 @@ void Game::run()
 
             this->actThree();
             this->graphics.syncAudio();
+            this->records.startRecording();
         }
 
         if (!(this->menu.isOn()) && !(this->menu.gameEnded()))
@@ -262,20 +265,18 @@ void Game::makeCharacter(const int x, const int y)
 
     this->graphics.animateEntityMoving(mc_id, run);
     this->graphics.setHitbox(mc_id, {44, 96});
+    this->graphics.setBaseShield(mc_id, 200 + this->pTrack.SH_BUFFS * SH_BUFF);
 }
 
 
-
-
-
-void Game::makeEnemy(int x, int y)
+void Game::makeCustomEnemy(int x, int y, int dmg, int hp)
 {
     x = x * 200;
     y = y * 200;
 
     llint enemy_id = (this->graphics.spawnEntity("n_enemy1.png", x, y, 
-        (int)(15. * (1 + ((float)this->difficulty)*0.5)), 
-        (int)(100. * (1 + ((float)this->difficulty)*0.25)), 
+        (int)(float(dmg) * (1 + ((float)this->difficulty)*0.5)), 
+        (int)(float(hp) * (1 + ((float)this->difficulty)*0.25)), 
         Team::HOSTILE));
     this->objectNameMap["enemy" + std::to_string(enemy_id)] = enemy_id;
 
@@ -341,49 +342,66 @@ void Game::makeEnemy(int x, int y)
     this->graphics.animateEntity(enemy_id, at, at);
 
     this->graphics.setHitbox(enemy_id,{38,60});
-
 }
 
-void Game::spawnCrawler(int x, int y)
+
+void Game::makeEnemy(int x, int y)
 {
+    this->makeCustomEnemy(x, y, 15, 100);
+}
+
+void Game::spawnEnhancedEnemy(int x, int y)
+{
+    this->makeCustomEnemy(x, y, 35, 180);
+    this->graphics.setSpecialTint(this->graphics.getLastId(), RED_TINT);
+}
+
+void Game::makeCrawler(int x, int y, int dmg, int hp, float attackTime, bool big)
+{
+    // default attack time = 1.f
+    // lower time = faster attacks
     x = x * 200;
     y = y * 200;
 
-    llint enemy_id = (this->graphics.spawnEntity("crawler1.png", x, y, 
-    (int)(100. * (1 + ((float)this->difficulty)*0.5)), 
-    (int)(500. * (1 + ((float)this->difficulty)*0.25)), 
+    std::string up = "";
+    if (big)
+        up = "SCALED_";
+
+    llint enemy_id = (this->graphics.spawnEntity(up + "crawler1.png", x, y, 
+    (int)((float)dmg * (1 + ((float)this->difficulty)*0.5)), 
+    (int)((float)hp * (1 + ((float)this->difficulty)*0.25)), 
     Team::HOSTILE));
     this->objectNameMap["enemy" + std::to_string(enemy_id)] = enemy_id;
 
 
     Animation anim;
 
-    anim.textures.push_back(this->graphics.getTexture("crawler1.png"));
-    anim.textureNames.push_back("crawler1.png");
+    anim.textures.push_back(this->graphics.getTexture(up + "crawler1.png"));
+    anim.textureNames.push_back(up + "crawler1.png");
     anim.timeQueues.push_back(4);
 
     for (int i = 1; i <= 6; ++i)
     {
-        anim.textures.push_back(this->graphics.getTexture("crawler" + 
+        anim.textures.push_back(this->graphics.getTexture(up + "crawler" + 
         std::to_string(i) + ".png"));
-        anim.textureNames.push_back("crawler" + 
+        anim.textureNames.push_back(up + "crawler" + 
         std::to_string(i) + ".png");
         anim.timeQueues.push_back(0.08);
     }
     for (int i = 0; i < 10; ++i)
     {
-        anim.textures.push_back(this->graphics.getTexture("crawler5.png"));
-        anim.textures.push_back(this->graphics.getTexture("crawler6.png"));
-        anim.textureNames.push_back("crawler5.png");
-        anim.textureNames.push_back("crawler6.png");
+        anim.textures.push_back(this->graphics.getTexture(up + "crawler5.png"));
+        anim.textures.push_back(this->graphics.getTexture(up + "crawler6.png"));
+        anim.textureNames.push_back(up + "crawler5.png");
+        anim.textureNames.push_back(up + "crawler6.png");
         anim.timeQueues.push_back(0.03);
         anim.timeQueues.push_back(0.03);
     }
     for (int i = 6; i >= 1; i--)
     {
-        anim.textures.push_back(this->graphics.getTexture("crawler" + 
+        anim.textures.push_back(this->graphics.getTexture(up + "crawler" + 
         std::to_string(i) + ".png"));
-        anim.textureNames.push_back("crawler" + 
+        anim.textureNames.push_back(up + "crawler" + 
         std::to_string(i) + ".png");
         anim.timeQueues.push_back(0.08);
     }
@@ -396,20 +414,20 @@ void Game::spawnCrawler(int x, int y)
 
     for (int i = 1; i <= 4; ++i)
     {
-        at.textures.push_back(this->graphics.getTexture("crawler_a" + 
+        at.textures.push_back(this->graphics.getTexture(up + "crawler_a" + 
         std::to_string(i) + ".png"));
-        at.textureNames.push_back("crawler_a" + 
+        at.textureNames.push_back(up + "crawler_a" + 
         std::to_string(i) + ".png");
     }
 
-    at.textures.push_back(this->graphics.getTexture("crawler1.png"));
-    at.textureNames.push_back("crawler1.png");
+    at.textures.push_back(this->graphics.getTexture(up + "crawler1.png"));
+    at.textureNames.push_back(up + "crawler1.png");
 
-    at.timeQueues.push_back(0.5);
-    at.timeQueues.push_back(0.08);
-    at.timeQueues.push_back(0.04);
-    at.timeQueues.push_back(0.15);
-    at.timeQueues.push_back(1);
+    at.timeQueues.push_back(0.5 * attackTime);
+    at.timeQueues.push_back(0.08 * attackTime);
+    at.timeQueues.push_back(0.04 * attackTime);
+    at.timeQueues.push_back(0.15 * attackTime);
+    at.timeQueues.push_back(1 * attackTime);
 
     at.soundNames.push_back("fazedstomp.mp3");
 
@@ -420,38 +438,122 @@ void Game::spawnCrawler(int x, int y)
     for(int i = 1; i <= 3; ++i)
     {
         run.textures.push_back(this->graphics.getTexture(
-            "crawler_walk" + std::to_string(i) + ".png"
+            up + "crawler_walk" + std::to_string(i) + ".png"
         ));
-        run.textureNames.push_back("crawler_walk" + std::to_string(i) + ".png");
+        run.textureNames.push_back(up + "crawler_walk" + std::to_string(i) + ".png");
         run.timeQueues.push_back(0.05);
     }
 
     run.textures.push_back(this->graphics.getTexture(
-        "crawler1.png"
+        up + "crawler1.png"
     ));
-    run.textureNames.push_back("crawler1.png");
+    run.textureNames.push_back(up + "crawler1.png");
     run.timeQueues.push_back(0.05);
 
     for(int i = 4; i <= 6; ++i)
     {
         run.textures.push_back(this->graphics.getTexture(
-            "crawler_walk" + std::to_string(i) + ".png"
+            up + "crawler_walk" + std::to_string(i) + ".png"
         ));
-        run.textureNames.push_back("crawler_walk" + std::to_string(i) + ".png");
+        run.textureNames.push_back(up + "crawler_walk" + std::to_string(i) + ".png");
         run.timeQueues.push_back(0.05);
     }
 
     run.textures.push_back(this->graphics.getTexture(
-        "crawler1.png"
+        up + "crawler1.png"
     ));
-    run.textureNames.push_back("crawler1.png");
+    run.textureNames.push_back(up + "crawler1.png");
     run.timeQueues.push_back(0.05);
 
     this->graphics.animateEntityMoving(enemy_id, run);
 
-    this->graphics.setHitbox(enemy_id, {125, 125});
+
+    if (!big)
+        this->graphics.setHitbox(enemy_id, {125, 125});
+    else
+        this->graphics.setHitbox(enemy_id, {300, 300});
 }
 
+void Game::makeCustomTurret(int x, int y, int dmg, 
+    double prSpeed, double fireRate, Tint tint)
+{
+    x *= 200;
+    y *= 200;
+    llint enemy_id = (this->graphics.spawnEntity("turret1.png", x, y, 
+    (int)(10. * (1 + ((float)this->difficulty)*0.5)), 
+    (int)(10. * (1 + ((float)this->difficulty)*0.25)), 
+    Team::HOSTILE));
+    this->objectNameMap["turret" + std::to_string(enemy_id)] = enemy_id;
+
+    Animation a;
+
+    for (int i = 1; i < 4; ++i)
+    {
+        a.textures.push_back(this->graphics.getTexture("turret"
+        + std::to_string(i) + ".png"));
+        a.textureNames.push_back("turret"
+        + std::to_string(i) + ".png");
+        a.timeQueues.push_back(0.1);
+    }
+
+    for (int i = 3; i > 0; --i)
+    {
+        a.textures.push_back(this->graphics.getTexture("turret"
+        + std::to_string(i) + ".png"));
+        a.textureNames.push_back("turret"
+        + std::to_string(i) + ".png");
+        a.timeQueues.push_back(0.1);
+    }
+
+    this->graphics.animateEntity(enemy_id, a, a);
+
+    Animation a1, a2;
+
+    for (int i = 1; i <= 5; ++i)
+    {
+        a1.textures.push_back(this->graphics.getTexture("energy_ball" + std::to_string(i) + ".png"));
+        a1.textureNames.push_back("energy_ball" + std::to_string(i) + ".png");
+        a1.timeQueues.push_back(0.05);
+    }
+
+    for (int i = 1; i <= 9; ++i)
+    {
+        a2.textures.push_back(this->graphics.getTexture("eb_exp" + std::to_string(i) + ".png"));
+        a2.textureNames.push_back("eb_exp" + std::to_string(i) + ".png");
+        if (i != 9)
+            a2.timeQueues.push_back(0.03);
+    }
+    a2.timeQueues.push_back(2);
+    
+    this->graphics.makeEnemyRanged(enemy_id,
+        a1, a2, 
+        (int)((float)dmg * (1 + ((float)this->difficulty)*0.5)), 
+        (prSpeed * (1 + ((float)this->difficulty)*0.2)), 
+        fireRate, 
+        1.5
+    );
+
+    this->graphics.turretFromRangedEntity(enemy_id);
+    this->graphics.setSpecialTint(enemy_id, tint);
+    this->graphics.setSpecialProjTint(enemy_id, tint);
+}
+
+void Game::spawnCrawler(int x, int y)
+{
+    this->makeCrawler(x, y, 100, 500, 1.f, false);
+}
+
+
+void Game::spawnEnhancedCrawler(int x, int y)
+{
+    this->makeCrawler(x, y, 120, 600, 0.3f, false);
+    this->graphics.setSpecialTint(this->graphics.getLastId(), VIOLET_TINT);
+}
+
+void Game::spawnBigCrawler(int x, int y)
+{
+    this->makeCrawler(x, y, 300, 1000, 1.5f, true);
+}
 
 void Game::spawnRangedCrawler(int x, int y)
 {
@@ -486,7 +588,38 @@ void Game::spawnRangedCrawler(int x, int y)
 }
 
 
+void Game::spawnEnhancedRangedCrawler(int x, int y)
+{
+    this->spawnCrawler(x, y);
+    this->graphics.setSpecialTint(this->graphics.getLastId(), GREEN_TINT);
+    
+    Animation a1, a2;
 
+    for (int i = 1; i <= 5; ++i)
+    {
+        a1.textures.push_back(this->graphics.getTexture("energy_ball" + std::to_string(i) + ".png"));
+        a1.textureNames.push_back("energy_ball" + std::to_string(i) + ".png");
+        a1.timeQueues.push_back(0.05);
+    }
+
+    for (int i = 1; i <= 9; ++i)
+    {
+        a2.textures.push_back(this->graphics.getTexture("eb_exp" + std::to_string(i) + ".png"));
+        a2.textureNames.push_back("eb_exp" + std::to_string(i) + ".png");
+        if (i != 9)
+            a2.timeQueues.push_back(0.03);
+    }
+    a2.timeQueues.push_back(2);
+    
+    this->graphics.makeEnemyRanged(this->graphics.getLastId(),
+        a1, a2, 
+        (int)(25. * (1 + ((float)this->difficulty)*0.5)), 
+        (4. * (1 + ((float)this->difficulty)*0.2)), 
+        0.1, 
+        1.5
+    );
+    this->graphics.setSpecialProjTint(this->graphics.getLastId(), GREEN_TINT);
+}
 
 void Game::spawnEnemyRobot(int x, int y)
 {
@@ -579,50 +712,13 @@ void Game::spawnEnemyRobot(int x, int y)
 
 void Game::spawnTurret(int x, int y)
 {
-    x *= 200;
-    y *= 200;
-    llint enemy_id = (this->graphics.spawnEntity("turret.png", x, y, 
-    (int)(10. * (1 + ((float)this->difficulty)*0.5)), 
-    (int)(10. * (1 + ((float)this->difficulty)*0.25)), 
-    Team::HOSTILE));
-    this->objectNameMap["turret" + std::to_string(enemy_id)] = enemy_id;
-
-    Animation a;
-    a.textures.push_back(this->graphics.getTexture("turret.png"));
-    a.textureNames.push_back("turret.png");
-    a.timeQueues.push_back(1);
-
-    this->graphics.animateEntity(enemy_id, a, a);
-
-    Animation a1, a2;
-
-    for (int i = 1; i <= 5; ++i)
-    {
-        a1.textures.push_back(this->graphics.getTexture("energy_ball" + std::to_string(i) + ".png"));
-        a1.textureNames.push_back("energy_ball" + std::to_string(i) + ".png");
-        a1.timeQueues.push_back(0.05);
-    }
-
-    for (int i = 1; i <= 9; ++i)
-    {
-        a2.textures.push_back(this->graphics.getTexture("eb_exp" + std::to_string(i) + ".png"));
-        a2.textureNames.push_back("eb_exp" + std::to_string(i) + ".png");
-        if (i != 9)
-            a2.timeQueues.push_back(0.03);
-    }
-    a2.timeQueues.push_back(2);
-    
-    this->graphics.makeEnemyRanged(enemy_id,
-        a1, a2, 
-        (int)(10. * (1 + ((float)this->difficulty)*0.5)), 
-        (2. * (1 + ((float)this->difficulty)*0.2)), 
-        0.25, 
-        1.5
-    );
-
-    this->graphics.turretFromRangedEntity(enemy_id);
+    this->makeCustomTurret(x, y, 10, 2., 0.25, DEFAULT_TINT);
 }
 
+void Game::spawnEnhancedTurret(int x, int y)
+{
+    this->makeCustomTurret(x, y, 20, 3., 0.15, RED_TINT);
+}
 
 void Game::makeTrap(int x, int y)
 {
@@ -782,6 +878,7 @@ void Game::makeWall(const int x, const int y)
     this->objectNameMap["wall" + std::to_string(wall_id)] = wall_id;
 
     this->graphics.wallFromObject(wall_id);
+    this->graphics.setSpecialTint(wall_id, this->wallTint);
 }
 
 // USES ABSOLUTE COORDINATES
@@ -1141,6 +1238,35 @@ void Game::createCasmBlock(int x, int y, const int wdth,
 }
 
 
+
+void Game::createCasmPath(int x, int y, const int wdth, const int hgth, 
+    const Directions& exits, const Tint& tint)
+{
+    x *= 200;
+    y *= 200;
+
+    for (int i = 0; i < hgth; ++i)
+    {
+        for (int j = 0; j < wdth; ++j)
+        {
+            this->makeFloor(x + j * 200, y + i * 200);
+            if (i == 0)
+            {
+                if (exits.top)
+                    this->makeCasm(x + j * 200, y - 200, {0,1,0,0}, tint);
+                if (exits.down)
+                    this->makeCasm(x + j * 200, y + hgth * 200, {0,0,0,1}, tint);
+            }
+        }
+        if (exits.left)
+            this->makeCasm(x - 200, y + i * 200, {0,0,1,0}, tint);
+        if (exits.right)
+            this->makeCasm(x + wdth * 200, y + i * 200, {1,0,0,0}, tint);
+    }
+}
+
+
+
 void Game::loadTextures()
 {
     this->graphics.loadTextureFromImage("robot.png");
@@ -1198,10 +1324,16 @@ void Game::loadTextures()
         this->graphics.loadTextureFromImage("rob" + std::to_string(i) + ".png");
         this->graphics.loadTextureFromImage("rob_r" + std::to_string(i) + ".png");
         this->graphics.loadTextureFromImage("crawler" + std::to_string(i) + ".png");
+        this->graphics.loadTextureFromRescaledImage(
+            "crawler" + std::to_string(i) + ".png", 3.f);
         this->graphics.loadTextureFromImage("crawler_walk" + std::to_string(i) + ".png");
+        this->graphics.loadTextureFromRescaledImage(
+            "crawler_walk" + std::to_string(i) + ".png", 3.f);
     }
     this->graphics.loadTextureFromImage("crawler_walk6.png");
     this->graphics.loadTextureFromImage("crawler6.png");
+    this->graphics.loadTextureFromRescaledImage("crawler_walk6.png", 3.f);
+    this->graphics.loadTextureFromRescaledImage("crawler6.png", 3.f);
     this->graphics.loadTextureFromImage("rob6.png");
     this->graphics.loadTextureFromImage("rob_r6.png");
     this->graphics.loadTextureFromImage("rob_r7.png");
@@ -1210,7 +1342,8 @@ void Game::loadTextures()
     for (int i = 1; i <= 4; ++i)
     {
         this->graphics.loadTextureFromImage("crawler_a" + std::to_string(i) + ".png");
-    
+        this->graphics.loadTextureFromRescaledImage(
+            "crawler_a" + std::to_string(i) + ".png", 3.f);
         this->graphics.loadTextureFromImage("ntrap" + std::to_string(i) + ".png");
     }
 
@@ -1229,7 +1362,8 @@ void Game::loadTextures()
                     );
 
 
-    this->graphics.loadTextureFromImage("turret.png");
+    for (int i = 1; i < 4; ++i)
+        this->graphics.loadTextureFromImage("turret" + std::to_string(i) + ".png");
 }
 
 
@@ -1259,44 +1393,7 @@ void Game::loadSounds()
 
 void Game::actOne()
 {
-    // int c1 = -1000, c2 = -1000;
-
-    // for (int i = 0; i < 10; ++i)
-    // {
-    //     for (int j = 0; j < 10; ++j)
-    //     {
-    //         this->makeFloor(c1 + (i * 200), c2 + (j * 200));
-    //     }
-    // }
-
-
-    // WARNING
-    // THIS DRAINS MEMORY BCS RIGHT NOW TO EVERY ENEMY THERE IS A UNIQUE 
-    // ANIMATION, BUT THEY ALL COULD BE THE SAME SO ONLY ONE TAKES MEMORY
-    // MUST BE REWRITTEN WITH PROPER POINTERS
-
-    // for (int i = 0; i < 5; ++i)
-    // {
-    //     this->makeTrap(
-    //         GetRandomValue(0, 1000),
-    //         GetRandomValue(0, 1000)
-    //     );
-    // }
-
-    // this->starNum = GetRandomValue(5, 10);
-    // for (int i = 0; i < this->starNum; ++i)
-    // {
-    //     int x = GetRandomValue(0, 1000);
-    //     int y = GetRandomValue(0, 1000);
-    //     llint tmp = (this->graphics.spawnTexture("star.png", x, y));
-    //     this->objectNameMap["star" + std::to_string(i)] = tmp;
-    // }
-
-    // llint mc_id = (this->graphics.spawnEntity("robot.png", 100, 100, 10, 1000, Team::MAIN));
-    // this->objectNameMap["MC"] = mc_id;
-    // // std::cout << "mc_id: " << std::endl;
-    // // std::cout << mc_id << std::endl;
-    // this->graphics.centerCamera(mc_id);
+    this->wallTint = DEFAULT_TINT;
 
     this->graphics.setFloorTint(DEFAULT_TINT);
 
@@ -1453,6 +1550,8 @@ void Game::actOne()
 
 void Game::actTwo()
 {
+    this->wallTint = DEFAULT_TINT;
+
     this->graphics.setFloorTint(RED_TINT);
 
     this->createRoom(-1, -1, 6, 3, {0, 0, 1, 0}); // 1st room
@@ -1701,6 +1800,7 @@ void Game::actTwo()
 void Game::actThree()
 {
     this->graphics.setFloorTint(YELLOW_TINT);
+    this->wallTint = DARK_ORANGE_TINT;
 
     this->createRoom(-3, -3, 6, 6, {1,1,1,1}); //1st room
 
@@ -1709,18 +1809,143 @@ void Game::actThree()
     this->createRoom(-5, 6, 10, 10, {0,0,0,1});
     this->createCasmBlock(-5, 8, 10, 8, YELLOW_TINT);
 
-    for (int i = -12; i <= -5; ++i)
-    {
-        this->createCasm(-2, i, {1,0,1,0}, YELLOW_TINT);
-        this->createCasm(1, i, {1,0,1,0}, YELLOW_TINT);
-    }
-
     this->createFloorBlock(-1, -12, 2, 8);
 
+    this->createFloorBlock(-3, -10, 1, 3);
+    this->createFloorBlock(2, -10, 1, 3);
 
+    this->createCasmPath(4, -1, 2, 2, {0,1,1,0}, YELLOW_TINT);
+    this->createCasmPath(4, -4, 2, 3, {0,0,1,0}, YELLOW_TINT);
+    this->createCasmPath(4, -12, 2, 8, {1,0,1,0}, YELLOW_TINT);
+
+    this->createCasmPath(-6, -1, 2, 2, {1,1,0,0}, YELLOW_TINT);
+    this->createCasmPath(-6, -4, 2, 3, {1,0,0,0}, YELLOW_TINT);
+    this->createCasmPath(-6, -12, 2, 8, {1,0,1,0}, YELLOW_TINT);
+
+    for (int i = -12; i <= -5; ++i)
+    {
+        this->createCasm(-4, i, {1,0,1,0}, YELLOW_TINT);
+        this->createCasm(-2, i, {1,0,1,0}, YELLOW_TINT);
+        this->createCasm(1, i, {1,0,1,0}, YELLOW_TINT);
+        this->createCasm(3, i, {1,0,1,0}, YELLOW_TINT);
+    }
+
+    this->createCasm(2, -7, {0,0,0,1}, YELLOW_TINT);
+    this->createCasm(2, -11, {0,1,0,0}, YELLOW_TINT);
+
+    this->createCasm(-3, -7, {0,0,0,1}, YELLOW_TINT);
+    this->createCasm(-3, -11, {0,1,0,0}, YELLOW_TINT);
+
+    this->createFloorBlock(2, -12, 1, 8);
+    this->createFloorBlock(-3, -12, 1, 8);
+
+    this->createCasm(-4, -12, {1,0,0,1}, YELLOW_TINT);
+    this->createCasm(-3, -12, {0,1,0,1}, YELLOW_TINT);
+    this->createCasm(-2, -12, {0,0,1,1}, YELLOW_TINT);
+
+    this->createCasm(1, -12, {1,0,0,1}, YELLOW_TINT);
+    this->createCasm(2, -12, {0,1,0,1}, YELLOW_TINT);
+    this->createCasm(3, -12, {0,0,1,1}, YELLOW_TINT);
+
+    this->createCasmPath(-6, -18, 12, 6, {1,0,1,0}, YELLOW_TINT);
+
+    for (int i = 0; i < 3; ++i)
+        this->createCasmBlock(-4 + 3 * i, -16, 2, 2, YELLOW_TINT);
+
+    for (int c = 0; c < 2; c++)
+    {
+        for (int i = 0; i < 4; ++i)
+            this->spawnEnhancedEnemy(-2 + c * 3, -16);
+        this->spawnEnhancedCrawler(-5 + c * 9, -16);
+        this->spawnRangedCrawler(-3 + c * 5, -17);
+        this->createWallBlock(-6 + c * 7, -19, 5, 1);
+    }
+
+    this->createHallway(-1, -18, TOP, 2, 8);
+
+    for (int i = 0; i < 3; ++i)
+    {
+        this->createCasm(-1 + i % 2, -21 - 2 * i, 
+        {(bool)(i % 2), 1, (bool)((i + 1) % 2), 1}, YELLOW_TINT);
+    }
+    this->makeTimedTrap(-1, -24);
+    this->makeTimedTrap(0, -24);
+    this->makeTimedTrap(0, -25);
+    this->makeTimedTrap(-1, -22);
+    this->makeTimedTrap(0, -22);
+    this->makeTimedTrap(0, -21);
+
+    this->createCasm(-2, -23, {1,1,1,1}, YELLOW_TINT);
+    this->createCasm(-3, -24, {0,1,0,0}, YELLOW_TINT);
+    this->createCasm(-4, -23, {0,0,1,0}, YELLOW_TINT);
+    this->createCasm(-3, -22, {0,0,0,1}, YELLOW_TINT);
+    this->spawnEnhancedTurret(-3, -23);
+
+    this->createCasmPath(-2, -30, 4, 4, {1,0,0,1}, YELLOW_TINT);
+
+    this->createHallway(2, -29, RIGHT, 2, 8);
+
+    this->createRoom(10, -31, 6, 6, {1,1,0,0});
+
+    this->createHallway(12, -25, DOWN, 2, 4);
+
+    this->createRoom(10, -21, 6, 8, {0,1,0,1});
+
+    for (int i = 0; i < 2; ++i)
+    {
+        this->createCasm(12, -20 + i * 5, {1,1,0,1}, YELLOW_TINT);
+        this->createCasm(13, -20 + i * 5, {0,1,1,1}, YELLOW_TINT);
+    }
+
+    this->createWallBlock(12, -18, 2, 2);
+
+    this->createCasmPath(12, -12, 2, 6, {1,0,1,0}, YELLOW_TINT);
+
+    this->createRoom(10, -5, 6, 8, {0,1,0,1});
+
+    this->createCasm(10, -3, {0,1,0,1}, YELLOW_TINT);
+    this->createCasm(11, -3, {0,0,1,1}, YELLOW_TINT);
+    this->createCasm(11, -2, {1,0,1,0}, YELLOW_TINT);
+    this->createCasm(11, -1, {1,0,1,0}, YELLOW_TINT);
+    this->createCasm(11, 0, {0,1,1,0}, YELLOW_TINT);
+    this->createCasm(10, 0, {0,1,0,1}, YELLOW_TINT);
+    this->spawnTurret(10, -2);
+    this->spawnTurret(10, -1);
+
+    this->createCasm(15, -3, {0,1,0,1}, YELLOW_TINT);
+    this->createCasm(14, -3, {1,0,0,1}, YELLOW_TINT);
+    this->createCasm(14, -2, {1,0,1,0}, YELLOW_TINT);
+    this->createCasm(14, -1, {1,0,1,0}, YELLOW_TINT);
+    this->createCasm(14, 0, {1,1,0,0}, YELLOW_TINT);
+    this->createCasm(15, 0, {0,1,0,1}, YELLOW_TINT);
+    this->spawnTurret(15, -2);
+    this->spawnTurret(15, -1);
+
+    this->createHallway(12, 3, DOWN, 2, 14);
+    this->createRoom(10, 17, 6, 6, {0,0,0,1});
 
     //Traps & heals before, enemies after
     this->makeCharacter(0, 0);
+
+
+    this->spawnBigCrawler(10, -29);
+
+    for (int j = 0; j < 2; ++j)
+    {
+        for (int i = 0; i < 4; ++i)
+            this->spawnCrawler(11 + 3 * j, -18);
+        this->spawnRangedCrawler(11 + 3 * j, -17);
+        this->spawnRangedCrawler(11 + 3 * j, -17);
+        this->spawnEnhancedEnemy(12 + j, -13);
+        this->spawnEnhancedEnemy(12 + j, -13);
+        this->spawnEnhancedEnemy(12 + j, -13);
+    }
+
+    for (int j = 0; j < 4; ++j)
+        this->spawnEnhancedCrawler(12, -1);
+
+    this->spawnEnhancedRangedCrawler(11, 19);
+    this->spawnEnhancedRangedCrawler(14, 19);
 
 
     this->spawnTurret(2, -8);
@@ -1728,8 +1953,6 @@ void Game::actThree()
 
     this->spawnTurret(-3, -8);
     this->spawnTurret(-3, -10);
-
-
 
     this->audio.stopAmbient();
 
